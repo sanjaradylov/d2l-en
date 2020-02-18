@@ -35,6 +35,7 @@ We perform several preprocessing steps on the raw text data, including ignoring 
 ```{.python .input  n=3}
 # Saved in the d2l package for later use
 def preprocess_nmt(text):
+<<<<<<< HEAD
 
     def no_space(char, prev_char):
         return char in frozenset('?!,.;"$%()+:') and prev_char != ' '
@@ -44,6 +45,15 @@ def preprocess_nmt(text):
     out += ''.join(' ' + char if no_space(char, prev_char) else char
                    for prev_char, char in zip(text[:-1], text[1:]))
     return out
+=======
+    def no_space(char, prev_char):
+        return char in set(',.!') and prev_char != ' '
+
+    text = text.replace('\u202f', ' ').replace('\xa0', ' ').lower()
+    out = [' ' + char if i > 0 and no_space(char, text[i-1]) else char
+           for i, char in enumerate(text)]
+    return ''.join(out)
+>>>>>>> upstream/master
 
 text = preprocess_nmt(raw_text)
 print(text[0:96])
@@ -149,9 +159,15 @@ Let's read the first batch.
 ```{.python .input  n=10}
 src_vocab, tgt_vocab, train_iter = load_data_nmt(batch_size=2, num_steps=8)
 for X, X_vlen, Y, Y_vlen in train_iter:
+<<<<<<< HEAD
     print('X:\n', X.astype('int32'))
     print('Valid lengths for X:', X_vlen)
     print('Y:\n', Y.astype('int32'))
+=======
+    print('X:', X.astype('int32'))
+    print('Valid lengths for X:', X_vlen)
+    print('Y:', Y.astype('int32'))
+>>>>>>> upstream/master
     print('Valid lengths for Y:', Y_vlen)
     break
 ```
