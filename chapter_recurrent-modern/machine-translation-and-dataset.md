@@ -8,6 +8,7 @@ Machine translation (MT) refers to the automatic translation of a segment of tex
 ```{.python .input  n=1}
 import d2l
 from mxnet import np, npx, gluon
+import os
 npx.set_np()
 ```
 
@@ -23,7 +24,7 @@ d2l.DATA_HUB['fra-eng'] = (d2l.DATA_URL + 'fra-eng.zip',
 # Saved in the d2l package for later use
 def read_data_nmt():
     data_dir = d2l.download_extract('fra-eng')
-    with open(data_dir + 'fra.txt', 'r') as f:
+    with open(os.path.join(data_dir, 'fra.txt'), 'r') as f:
         return f.read()
 
 raw_text = read_data_nmt()
@@ -35,17 +36,6 @@ We perform several preprocessing steps on the raw text data, including ignoring 
 ```{.python .input  n=3}
 # Saved in the d2l package for later use
 def preprocess_nmt(text):
-<<<<<<< HEAD
-
-    def no_space(char, prev_char):
-        return char in frozenset('?!,.;"$%()+:') and prev_char != ' '
-
-    text = text.replace('\u202f', ' ').replace('\xa0', ' ').lower()
-    out = text[0]
-    out += ''.join(' ' + char if no_space(char, prev_char) else char
-                   for prev_char, char in zip(text[:-1], text[1:]))
-    return out
-=======
     def no_space(char, prev_char):
         return char in set(',.!') and prev_char != ' '
 
@@ -53,10 +43,9 @@ def preprocess_nmt(text):
     out = [' ' + char if i > 0 and no_space(char, text[i-1]) else char
            for i, char in enumerate(text)]
     return ''.join(out)
->>>>>>> upstream/master
 
 text = preprocess_nmt(raw_text)
-print(text[0:96])
+print(text[0:95])
 ```
 
 ## Tokenization
@@ -107,12 +96,12 @@ One way to solve this problem is that if a sentence is longer than `num_steps`, 
 
 ```{.python .input  n=7}
 # Saved in the d2l package for later use
-def trim_pad(line, num_steps, padding_token):
+def truncate_pad(line, num_steps, padding_token):
     if len(line) > num_steps:
         return line[:num_steps]  # Trim
     return line + [padding_token] * (num_steps - len(line))  # Pad
 
-trim_pad(src_vocab[source[0]], 10, src_vocab['<pad>'])
+truncate_pad(src_vocab[source[0]], 10, src_vocab['<pad>'])
 ```
 
 Now we can convert a list of sentences into an `(num_example, num_steps)` index array. We also record the length of each sentence without the padding tokens, called *valid length*, which might be used by some models. In addition, we add the special “&lt;bos&gt;” and “&lt;eos&gt;” tokens to the target sentences so that our model will know the signals for starting and ending predicting.
@@ -120,12 +109,11 @@ Now we can convert a list of sentences into an `(num_example, num_steps)` index 
 ```{.python .input  n=8}
 # Saved in the d2l package for later use
 def build_array(lines, vocab, num_steps, is_source):
-    if is_source:
-        lines = [vocab[l] for l in lines]
-    else:
-        lines = [[vocab['<bos>']] + vocab[l] + [vocab['<eos>']]
-                 for l in lines]
-    array = np.array([trim_pad(l, num_steps, vocab['<pad>']) for l in lines])
+    lines = [vocab[l] for l in lines]
+    if not is_source:
+        lines = [[vocab['<bos>']] + l + [vocab['<eos>']] for l in lines]
+    array = np.array([truncate_pad(
+        l, num_steps, vocab['<pad>']) for l in lines])
     valid_len = (array != vocab['<pad>']).sum(axis=1)
     return array, valid_len
 ```
@@ -159,15 +147,9 @@ Let's read the first batch.
 ```{.python .input  n=10}
 src_vocab, tgt_vocab, train_iter = load_data_nmt(batch_size=2, num_steps=8)
 for X, X_vlen, Y, Y_vlen in train_iter:
-<<<<<<< HEAD
-    print('X:\n', X.astype('int32'))
-    print('Valid lengths for X:', X_vlen)
-    print('Y:\n', Y.astype('int32'))
-=======
     print('X:', X.astype('int32'))
     print('Valid lengths for X:', X_vlen)
     print('Y:', Y.astype('int32'))
->>>>>>> upstream/master
     print('Valid lengths for Y:', Y_vlen)
     break
 ```
@@ -185,4 +167,4 @@ for X, X_vlen, Y, Y_vlen in train_iter:
 
 ## [Discussions](https://discuss.mxnet.io/t/machine-translation/2396)
 
-![](../img/qr_machine-translation.svg)
+![](../img/qr_machine-translation-and-dataset.svg)

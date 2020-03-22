@@ -21,7 +21,7 @@ class Encoder(nn.Block):
     def __init__(self, **kwargs):
         super(Encoder, self).__init__(**kwargs)
 
-    def forward(self, X):
+    def forward(self, X, *args):
         raise NotImplementedError
 ```
 
@@ -76,6 +76,6 @@ class EncoderDecoder(nn.Block):
 
 
 
-## [Discussions](https://discuss.mxnet.io/t/2396)
+## [Discussions](https://discuss.mxnet.io/t/2393)
 
 ![](../img/qr_encoder-decoder.svg)
