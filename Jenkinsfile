@@ -11,9 +11,15 @@ stage("Build and Publish") {
       rm -rf ~/miniconda3/envs/${ENV_NAME}
       conda create -n ${ENV_NAME} pip python=3.7 -y
       conda activate ${ENV_NAME}
+      # d2l
+      python setup.py develop
+      # mxnet
       pip install mxnet-cu101==1.6.0
       pip install git+https://github.com/d2l-ai/d2l-book
-      python setup.py develop
+      # pytorch
+      pip install torch==1.5.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+      pip install torchvision
+      # check
       pip list
       nvidia-smi
       """
@@ -27,7 +33,23 @@ stage("Build and Publish") {
       conda activate ${ENV_NAME}
       export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}
       export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64
+      rm -rf _build/eval/data
+      [ -e _build/data_tmp ] && mv _build/data_tmp _build/eval/data
+      ./static/clean_eval.sh
       d2lbook build eval
+      rm -rf _build/data_tmp
+      mv _build/eval/data _build/data_tmp
+      """
+
+      sh label: "Execute Notebooks [Pytorch]", script: """set -ex
+      conda activate ${ENV_NAME}
+      export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}
+      export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64
+      rm -rf _build/eval_pytorch/data
+      [ -e _build/data_pytorch_tmp ] && mv _build/data_pytorch_tmp _build/eval_pytorch/data
+      d2lbook build eval --tab pytorch
+      rm -rf _build/data_pytorch_tmp
+      mv _build/eval_pytorch/data _build/data_pytorch_tmp
       """
 
       sh label:"Build HTML", script:"""set -ex
@@ -42,11 +64,8 @@ stage("Build and Publish") {
 
       sh label:"Build Package", script:"""set -ex
       conda activate ${ENV_NAME}
-      # don't pack downloaded data into the pkg
-      rm -rf _build/data_tmp
-      [ -e _build/eval/data ] && mv _build/eval/data _build/data_tmp
       d2lbook build pkg
-      [ -e _build/data_tmp ] && mv _build/data_tmp _build/eval/data
+      ./static/build_whl.sh
       """
 
       if (env.BRANCH_NAME == 'master') {
@@ -58,4 +77,3 @@ stage("Build and Publish") {
     }
   }
 }
-

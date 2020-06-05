@@ -22,7 +22,7 @@ To illustrate the overall architecture of seq2seq with attention model, the laye
 :label:`fig_s2s_attention_details`
 
 ```{.python .input  n=1}
-import d2l
+from d2l import mxnet as d2l
 from mxnet import np, npx
 from mxnet.gluon import rnn, nn
 npx.set_np()
@@ -36,11 +36,11 @@ Since the encoder of seq2seq with attention mechanisms is the same as `Seq2SeqEn
 
 - **the hidden state of the encoder's final timestep**: it is used as the initial decoder's hidden state;
 
-- **the encoder valid length**: so the attention layer will not consider the padding tokens with in the encoder outputs.
+- **the encoder valid length**: so the attention layer will not consider the padding tokens within the encoder outputs.
 
 At each timestep of the decoding, we use the output of the decoder's last RNN layer as the query for the attention layer. The attention model's output is then concatenated with the input embedding vector to feed into the RNN layer. Although the RNN layer hidden state also contains history information from decoder, the attention output explicitly selects the encoder outputs based on `enc_valid_len`, so that the attention output suspends other irrelevant information.
 
-Let's implement the `Seq2SeqAttentionDecoder`, and see how it differs from the decoder in seq2seq from :numref:`sec_seq2seq_decoder`.
+Let us implement the `Seq2SeqAttentionDecoder`, and see how it differs from the decoder in seq2seq from :numref:`sec_seq2seq_decoder`.
 
 ```{.python .input  n=2}
 class Seq2SeqAttentionDecoder(d2l.Decoder):
@@ -97,7 +97,7 @@ out.shape, len(state), state[0].shape, len(state[1]), state[1][0].shape
 Similar to :numref:`sec_seq2seq_training`, we try a toy model by applying
 the same training hyperparameters and the same training loss.
 As we can see from the result, since the
-sequences in the training dataset are relative short,
+sequences in the training dataset are relatively short,
 the additional attention
 layer does not lead to a significant improvement.
 Due to the computational 

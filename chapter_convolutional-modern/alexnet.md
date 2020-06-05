@@ -7,8 +7,8 @@ in the computer vision and machine learning communities
 following the introduction of LeNet,
 they did not immediately dominate the field.
 Although LeNet achieved good results on early small datasets,
-the performance and feasability of training convolutional networks
-on larger, more realistic datasets had yet to be established
+the performance and feasibility of training convolutional networks
+on larger, more realistic datasets had yet to be established.
 In fact, for much of the intervening time between the early 1990s
 and the watershed results of 2012,
 neural networks were often surpassed by other machine learning methods,
@@ -41,7 +41,7 @@ classical pipelines looked more like this:
 1. Obtain an interesting dataset. In early days, these datasets required expensive sensors (at the time, 1 megapixel images were state of the art).
 2. Preprocess the dataset with hand-crafted features based on some knowledge of optics, geometry, other analytic tools, and occasionally on the serendipitous discoveries of lucky graduate students.
 3. Feed the data through a standard set of feature extractors such as [SIFT](https://en.wikipedia.org/wiki/Scale-invariant_feature_transform), the Scale-Invariant Feature Transform, or [SURF](https://en.wikipedia.org/wiki/Speeded_up_robust_features), the Speeded-Up Robust Features, or any number of other hand-tuned pipelines.
-4. Dump the resulting representations into your favorite classifier, likely a linear model or kernel method, to learn a classifier.
+4. Dump the resulting representations into your favorite classifier, likely a linear model or kernel method, to train a classifier.
 
 If you spoke to machine learning researchers,
 they believed that machine learning was both important and beautiful.
@@ -188,7 +188,7 @@ Hence, for the power budget of a CPU core that runs 4x faster (a typical number)
 you can use 16 GPU cores at 1/4 the speed,
 which yields 16 x 1/4 = 4x the performance.
 Furthermore, GPU cores are much simpler
-(in fact, for a long time they weren't even *able*
+(in fact, for a long time they were not even *able*
 to execute general purpose code),
 which makes them more energy efficient.
 Last, many operations in deep learning require high memory bandwidth.
@@ -231,7 +231,7 @@ First, AlexNet is much deeper than the comparatively small LeNet5.
 AlexNet consists of eight layers: five convolutional layers,
 two fully-connected hidden layers, and one fully-connected output layer. Second, AlexNet used the ReLU instead of the sigmoid
 as its activation function.
-Let's delve into the details below.
+Let us delve into the details below.
 
 ### Architecture
 
@@ -275,8 +275,8 @@ such as flipping, clipping, and color changes.
 This makes the model more robust and the larger sample size effectively reduces overfitting.
 We will discuss data augmentation in greater detail in :numref:`sec_image_augmentation`.
 
-```{.python .input  n=1}
-import d2l
+```{.python .input}
+from d2l import mxnet as d2l
 from mxnet import np, npx
 from mxnet.gluon import nn
 npx.set_np()
@@ -311,14 +311,47 @@ net.add(nn.Conv2D(96, kernel_size=11, strides=4, activation='relu'),
         nn.Dense(10))
 ```
 
+
+```{.python .input}
+#@tab pytorch
+from d2l import torch as d2l
+import torch
+from torch import nn
+
+net = nn.Sequential(
+    nn.Conv2d(1, 96, kernel_size=11, stride=4, padding=1), nn.ReLU(),
+    nn.MaxPool2d(kernel_size=3, stride=2),
+    nn.Conv2d(96, 256, kernel_size=5, padding=2), nn.ReLU(),
+    nn.MaxPool2d(kernel_size=3, stride=2),
+    nn.Conv2d(256, 384, kernel_size=3, padding=1), nn.ReLU(),
+    nn.Conv2d(384, 384, kernel_size=3, padding=1), nn.ReLU(),
+    nn.Conv2d(384, 256, kernel_size=3, padding=1), nn.ReLU(),
+    nn.MaxPool2d(kernel_size=3, stride=2),
+    nn.Flatten(),
+    nn.Dropout(p=0.5),
+    nn.Linear(6400, 4096), nn.ReLU(),
+    nn.Dropout(p=0.5),
+    nn.Linear(4096, 4096), nn.ReLU(),
+    nn.Linear(4096, 10))
+```
+
 We construct a single-channel data instance with both height and width of 224 to observe the output shape of each layer. It matches our diagram above.
 
-```{.python .input  n=2}
+```{.python .input}
 X = np.random.uniform(size=(1, 1, 224, 224))
 net.initialize()
 for layer in net:
     X = layer(X)
     print(layer.name, 'output shape:\t', X.shape)
+```
+
+
+```{.python .input}
+#@tab pytorch
+X = torch.randn(1, 1, 224, 224)
+for layer in net:
+    X=layer(X)
+    print(layer.__class__.__name__,'Output shape:\t',X.shape)
 ```
 
 ## Reading the Dataset
@@ -329,12 +362,19 @@ even on a modern GPU.
 One of the problems with applying AlexNet directly on Fashion-MNIST
 is that our images are lower resolution ($28 \times 28$ pixels)
 than ImageNet images.
-To make things work, we upsample them to $244 \times 244$
+To make things work, we upsample them to $224 \times 224$
 (generally not a smart practice,
 but we do it here to be faithful to the AlexNet architecture).
 We perform this resizing with the `resize` argument in `load_data_fashion_mnist`.
 
-```{.python .input  n=3}
+```{.python .input}
+batch_size = 128
+train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size, resize=224)
+```
+
+
+```{.python .input}
+#@tab pytorch
 batch_size = 128
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size, resize=224)
 ```
@@ -347,7 +387,14 @@ the main change here is the use of a smaller learning rate
 and much slower training due to the deeper and wider network,
 the higher image resolution and the more costly convolutions.
 
-```{.python .input  n=5}
+```{.python .input}
+lr, num_epochs = 0.01, 10
+d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr)
+```
+
+
+```{.python .input}
+#@tab pytorch
 lr, num_epochs = 0.01, 10
 d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr)
 ```
@@ -372,6 +419,10 @@ d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr)
     * How about memory bandwidth when computing the results?
 1. Apply dropout and ReLU to LeNet5. Does it improve? How about preprocessing?
 
-## [Discussions](https://discuss.mxnet.io/t/2354)
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/75)
+:end_tab:
 
-![](../img/qr_alexnet.svg)
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/76)
+:end_tab:

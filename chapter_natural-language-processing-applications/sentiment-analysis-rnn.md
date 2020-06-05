@@ -13,10 +13,9 @@ negative emotion.
 :label:`fig_nlp-map-sa-rnn`
 
 ```{.python .input  n=1}
-import d2l
+from d2l import mxnet as d2l
 from mxnet import gluon, init, np, npx
 from mxnet.gluon import nn, rnn
-from mxnet.contrib import text
 npx.set_np()
 
 batch_size = 64
@@ -80,14 +79,13 @@ net.initialize(init.Xavier(), ctx=ctx)
 Because the training dataset for sentiment classification is not very large, in order to deal with overfitting, we will directly use word vectors pre-trained on a larger corpus as the feature vectors of all words. Here, we load a 100-dimensional GloVe word vector for each word in the dictionary `vocab`.
 
 ```{.python .input}
-glove_embedding = text.embedding.create(
-    'glove', pretrained_file_name='glove.6B.100d.txt')
+glove_embedding = d2l.TokenEmbedding('glove.6b.100d')
 ```
 
 Query the word vectors that in our vocabulary.
 
 ```{.python .input}
-embeds = glove_embedding.get_vecs_by_tokens(vocab.idx_to_token)
+embeds = glove_embedding[vocab.idx_to_token]
 embeds.shape
 ```
 
@@ -112,7 +110,7 @@ d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, ctx)
 Finally, define the prediction function.
 
 ```{.python .input  n=49}
-# Saved in the d2l package for later use
+#@save
 def predict_sentiment(net, vocab, sentence):
     sentence = np.array(vocab[sentence.split()], ctx=d2l.try_gpu())
     label = np.argmax(net(sentence.reshape(1, -1)), axis=1)

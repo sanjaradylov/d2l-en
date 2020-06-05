@@ -9,13 +9,13 @@ and not simply memorized our data.
 For example, imagine that we wanted to hunt 
 for patterns among genetic markers 
 linking patients to their dementia status,
-(let's the labels be drawn from the set
+(let the labels be drawn from the set
 {*dementia*, *mild cognitive impairment*, *healthy*}).
 Because each person's genes identify them uniquely
 (ignoring identical siblings),
-it's possible to memorize the entire dataset.
+it is possible to memorize the entire dataset.
 
-We don't want our model to say 
+We do not want our model to say 
 *"That's Bob! I remember him! He has dementia!*
 The reason why is simple. 
 When we deploy the model in the future,
@@ -64,7 +64,7 @@ were we to apply it to an infinite stream of additional data points
 drawn from the same underlying data distribution as our original sample.
 
 Problematically, *we can never calculate the generalization error exactly*.
-That is because the imaginary stream of infinite data is an imaginary object.
+That is because the stream of infinite data is an imaginary object.
 In practice, we must *estimate* the generalization error
 by applying our model to an independent test set
 constituted of a random selection of data points
@@ -72,7 +72,7 @@ that were withheld from our training set.
 
 The following three thought experiments
 will help illustrate this situation better.
-Consider a college student trying to prepare for his final exam.
+Consider a college student trying to prepare for her final exam.
 A diligent student will strive to practice well
 and test her abilities using exams from previous years.
 Nonetheless, doing well on past exams is no guarantee
@@ -86,19 +86,19 @@ the reasons for giving certain answers.
 In most cases, the latter student will do much better.
 
 Likewise, consider a model that simply uses a lookup table to answer questions. If the set of allowable inputs is discrete and reasonably small, then perhaps after viewing *many* training examples, this approach would perform well. Still this model has no ability to do better than random guessing when faced with examples that it has never seen before.
-In reality the input spaces are far too large to memorize the answers corresponding to every conceivable input. For example, consider the black and white $28\times28$ images. If each pixel can take one among $256$ gray scale values, then there are $256^{784}$ possible images. That means that there are far more low-res grayscale thumbnail-sized images than there are atoms in the universe. Even if we could encounter this data, we could never afford to store the lookup table.
+In reality the input spaces are far too large to memorize the answers corresponding to every conceivable input. For example, consider the black and white $28\times28$ images. If each pixel can take one among $256$ grayscale values, then there are $256^{784}$ possible images. That means that there are far more low-res grayscale thumbnail-sized images than there are atoms in the universe. Even if we could encounter this data, we could never afford to store the lookup table.
 
 Last, consider the problem of trying
 to classify the outcomes of coin tosses (class 0: heads, class 1: tails)
 based on some contextual features that might be available.
 No matter what algorithm we come up with,
-because the generalization error will always be $\frac{1}{2}$.
+the generalization error will always be $\frac{1}{2}$.
 However, for most algorithms,
 we should expect our training error to be considerably lower,
 depending on the luck of the draw,
 even if we did not have any features!
 Consider the dataset {0, 1, 1, 1, 0, 1}.
-Our feature-less would have to fall back on always predicting
+Our feature-less algorithm would have to fall back on always predicting
 the *majority class*, which appears from our limited sample to be *1*.
 In this case, the model that always predicts class 1
 will incur an error of $\frac{1}{3}$,
@@ -123,7 +123,7 @@ extended this theory to more general classes of functions.
 This work laid the foundations of [Statistical Learning Theory](https://en.wikipedia.org/wiki/Statistical_learning_theory).
 
 
-In the *standard supervised learning setting*, which we have addressed up until now and will stick throughout most of this book,
+In the *standard supervised learning setting*, which we have addressed up until now and will stick with throughout most of this book,
 we assume that both the training data and the test data
 are drawn *independently* from *identical* distributions
 (commonly called the i.i.d. assumption).
@@ -141,7 +141,7 @@ These distributions are simply not identical.
 Moreover, draws might be correlated in time.
 What if we are classifying the topics of Tweets.
 The news cycle would create temporal dependencies
-in the topics being discussed violating any assumptions of independence.
+in the topics being discussed, violating any assumptions of independence.
 
 Sometimes we can get away with minor violations of the i.i.d. assumption
 and our models will continue to work remarkably well.
@@ -151,7 +151,7 @@ and yet we have useful tools for face recognition,
 speech recognition, language translation, etc.
 
 Other violations are sure to cause trouble.
-Imagine, for example, if we tried to train
+Imagine, for example, if we try to train
 a face recognition system by training it
 exclusively on university students
 and then want to deploy it as a tool
@@ -165,12 +165,12 @@ For now, even taking the i.i.d. assumption for granted,
 understanding generalization is a formidable problem.
 Moreover, elucidating the precise theoretical foundations
 that might explain why deep neural networks generalize as well as they do
-continues to vexes the greatest minds in learning theory.
+continues to vex the greatest minds in learning theory.
 
-When we train our models, we attempt searching for a function
+When we train our models, we attempt to search for a function
 that fits the training data as well as possible.
 If the function is so flexible that it can catch on to spurious patterns
-just as easily as to the true associations,
+just as easily as to true associations,
 then it might perform *too well* without producing a model
 that generalizes well to unseen data.
 This is precisely what we want to avoid (or at least control).
@@ -204,7 +204,7 @@ is probably closer to the truth.
 In philosophy, this is closely related to Popper’s
 criterion of [falsifiability](https://en.wikipedia.org/wiki/Falsifiability)
 of a scientific theory: a theory is good if it fits data
-and if there are specific tests which can be used to disprove it.
+and if there are specific tests that can be used to disprove it.
 This is important since all statistical estimation is
 [post hoc](https://en.wikipedia.org/wiki/Post_hoc),
 i.e., we estimate after we observe the facts,
@@ -216,7 +216,7 @@ we’ll focus on a few factors that tend
 to influence the generalizability of a model class:
 
 1. The number of tunable parameters. When the number of tunable parameters, sometimes called the *degrees of freedom*, is large, models tend to be more susceptible to overfitting.
-1. The values taken by the parameters. When weights can take a wider range of values, models can be more susceptible to over fitting.
+1. The values taken by the parameters. When weights can take a wider range of values, models can be more susceptible to overfitting.
 1. The number of training examples. It’s trivially easy to overfit a dataset containing only one or two examples even if your model is simple. But overfitting a dataset with millions of examples requires an extremely flexible model.
 
 
@@ -232,7 +232,7 @@ At other times, we are comparing
 members of the same class of models
 that have been trained with different hyperparameter settings.
 
-With multilayer perceptrons for example,
+With multilayer perceptrons, for example,
 we may wish to compare models with
 different numbers of hidden layers,
 different numbers of hidden units,
@@ -336,7 +336,7 @@ two topics that we discuss below.
 
 To illustrate some classical intuition
 about overfitting and model complexity,
-we given an example using polynomials.
+we give an example using polynomials.
 Given training data consisting of a single feature $x$
 and a corresponding real-valued label $y$,
 we try to find the polynomial of degree $d$
@@ -346,7 +346,7 @@ $$\hat{y}= \sum_{i=0}^d x^i w_i$$
 to estimate the labels $y$.
 This is just a linear regression problem
 where our features are given by the powers of $x$,
-the $w_i$ given the model’s weights,
+the model's weights are given by $w_i$,
 and the bias is given by $w_0$ since $x^0 = 1$ for all $x$.
 Since this is just a linear regression problem,
 we can use the squared error as our loss function.
@@ -394,11 +394,20 @@ We can now explore these concepts interactively
 by fitting polynomials to data.
 To get started we will import our usual packages.
 
-```{.python .input  n=1}
-import d2l
+```{.python .input}
+from d2l import mxnet as d2l
 from mxnet import gluon, np, npx
 from mxnet.gluon import nn
 npx.set_np()
+```
+
+```{.python .input}
+#@tab pytorch
+from d2l import torch as d2l
+import torch
+from torch import nn
+import numpy as np
+import math
 ```
 
 ### Generating the Dataset
@@ -412,7 +421,7 @@ The noise term $\epsilon$ obeys a normal distribution
 with a mean of 0 and a standard deviation of 0.1.
 We will synthesize 100 samples each for the training set and test set.
 
-```{.python .input  n=2}
+```{.python .input}
 maxdegree = 20  # Maximum degree of the polynomial
 n_train, n_test = 100, 100  # Training and test dataset sizes
 true_w = np.zeros(maxdegree)  # Allocate lots of empty space
@@ -427,6 +436,28 @@ labels = np.dot(poly_features, true_w)
 labels += np.random.normal(scale=0.1, size=labels.shape)
 ```
 
+```{.python .input}
+#@tab pytorch
+maxdegree = 20  # Maximum degree of the polynomial
+n_train, n_test = 100, 100  # Training and test dataset sizes
+true_w = torch.zeros(maxdegree)  # Allocate lots of empty space
+true_w[0:4] = torch.tensor([5, 1.2, -3.4, 5.6])
+
+features = np.random.normal(size=(n_train + n_test, 1))
+np.random.shuffle(features)
+poly_features = np.power(features, np.arange(maxdegree).reshape(1, -1))
+gamma = np.vectorize(math.gamma)  # Use math.gamma function for numpy array
+poly_features = poly_features / (
+    gamma(np.arange(maxdegree) + 1).reshape(1, -1))
+
+labels = np.dot(poly_features, true_w)
+labels += np.random.normal(scale=0.1)
+
+features = torch.from_numpy(features).type(torch.float32)
+poly_features = torch.from_numpy(poly_features).type(torch.float32)
+labels = torch.from_numpy(labels).type(torch.float32)
+```
+
 For optimization, we typically want to avoid
 very large values of gradients, losses, etc.
 This is why the monomials stored in `poly_features`
@@ -439,17 +470,21 @@ Take a look at the first 2 samples from the generated dataset.
 The value 1 is technically a feature,
 namely the constant feature corresponding to the bias.
 
-```{.python .input  n=3}
+```{.python .input}
+features[:2], poly_features[:2], labels[:2]
+```
+
+```{.python .input}
+#@tab pytorch
 features[:2], poly_features[:2], labels[:2]
 ```
 
 ### Training and Testing Model
 
-Let's first implement a function to evaluate the loss on a given data.
+Let us first implement a function to evaluate the loss on a given data.
 
-```{.python .input  n=4}
-# Saved in the d2l package for later use
-def evaluate_loss(net, data_iter, loss):
+```{.python .input}
+def evaluate_loss(net, data_iter, loss):  #@save
     """Evaluate the loss of a model on the given dataset."""
     metric = d2l.Accumulator(2)  # sum_loss, num_examples
     for X, y in data_iter:
@@ -457,9 +492,23 @@ def evaluate_loss(net, data_iter, loss):
     return metric[0] / metric[1]
 ```
 
+```{.python .input}
+#@tab pytorch
+def evaluate_loss(net, data_iter, loss):  #@save
+    """Evaluate the loss of a model on the given dataset."""
+    metric = d2l.Accumulator(2)  # sum_loss, num_examples
+    for X, y in data_iter:
+        l = loss(net(X), y.reshape(-1, 1))
+        if l.nelement() != 1:
+            metric.add(l.sum(), y.numpy().size)
+        else:
+            metric.add(l*len(y), y.numpy().size)
+    return metric[0] / metric[1]
+```
+
 Now define the training function.
 
-```{.python .input  n=5}
+```{.python .input}
 def train(train_features, test_features, train_labels, test_labels,
           num_epochs=1000):
     loss = gluon.loss.L2Loss()
@@ -485,6 +534,31 @@ def train(train_features, test_features, train_labels, test_labels,
     print('weight:', net[0].weight.data().asnumpy())
 ```
 
+```{.python .input}
+#@tab pytorch
+def train(train_features, test_features, train_labels, test_labels,
+          num_epochs=1000):
+    loss = nn.MSELoss()
+    input_shape = train_features.shape[-1]
+    # Switch off the bias since we already catered for it in the polynomial
+    # features
+    net = nn.Sequential(nn.Linear(input_shape, 1, bias=False))
+    batch_size = min(10, train_labels.shape[0])
+    train_iter = d2l.load_array((train_features, train_labels), batch_size)
+    test_iter = d2l.load_array((test_features, test_labels), batch_size,
+                               is_train=False)
+    trainer = torch.optim.SGD(net.parameters(), lr=0.01)
+    animator = d2l.Animator(xlabel='epoch', ylabel='loss', yscale='log',
+                            xlim=[1, num_epochs], ylim=[1e-3, 1e2],
+                            legend=['train', 'test'])
+    for epoch in range(1, num_epochs+1):
+        d2l.train_epoch_ch3(net, train_iter, loss, trainer)
+        if epoch % 50 == 0:
+            animator.add(epoch, (evaluate_loss(net, train_iter, loss),
+                                 evaluate_loss(net, test_iter, loss)))
+    print('weight:', net[0].weight.data.numpy())
+```
+
 ### Third-Order Polynomial Function Fitting (Normal)
 
 We will begin by first using a third-order polynomial function
@@ -494,11 +568,19 @@ when using the testing dataset is low.
 The trained model parameters are also close
 to the true values $w = [5, 1.2, -3.4, 5.6]$.
 
-```{.python .input  n=6}
+```{.python .input}
 # Pick the first four dimensions, i.e., 1, x, x^2, x^3 from the polynomial
 # features
 train(poly_features[:n_train, 0:4], poly_features[n_train:, 0:4],
       labels[:n_train], labels[n_train:])
+```
+
+```{.python .input}
+#@tab pytorch
+# Pick the first four dimensions, i.e., 1, x, x^2, x^3 from the polynomial
+# features
+train(poly_features[:n_train, 0:4], poly_features[n_train:, 0:4],
+      labels[:n_train].reshape(-1,1), labels[n_train:].reshape(-1,1))
 ```
 
 ### Linear Function Fitting (Underfitting)
@@ -513,15 +595,22 @@ When used to fit non-linear patterns
 (like the third-order polynomial function here)
 linear models are liable to underfit.
 
-```{.python .input  n=7}
+```{.python .input}
 # Pick the first four dimensions, i.e., 1, x from the polynomial features
 train(poly_features[:n_train, 0:3], poly_features[n_train:, 0:3],
       labels[:n_train], labels[n_train:])
 ```
 
+```{.python .input}
+#@tab pytorch
+# Pick the first four dimensions, i.e., 1, x from the polynomial features
+train(poly_features[:n_train, 0:3], poly_features[n_train:, 0:3],
+      labels[:n_train].reshape(-1,1), labels[n_train:].reshape(-1,1))
+```
+
 ### Insufficient Training (Overfitting)
 
-Now let's try to train the model
+Now let us try to train the model
 using a polynomial of too high degree.
 Here, there is insufficient data to learn that
 the higher-degree coefficients should have values close to zero.
@@ -536,12 +625,21 @@ Try out different model complexities (`n_degree`)
 and training set sizes (`n_subset`)
 to gain some intuition of what is happening.
 
-```{.python .input  n=8}
+```{.python .input}
 n_subset = 100  # Subset of data to train on
 n_degree = 20  # Degree of polynomials
 train(poly_features[1:n_subset, 0:n_degree],
       poly_features[n_train:, 0:n_degree], labels[1:n_subset],
       labels[n_train:])
+```
+
+```{.python .input}
+#@tab pytorch
+n_subset = 100  # Subset of data to train on
+n_degree = 20  # Degree of polynomials
+train(poly_features[1:n_subset, 0:n_degree],
+      poly_features[n_train:, 0:n_degree], labels[1:n_subset].reshape(-1,1),
+      labels[n_train:].reshape(-1,1))
 ```
 
 In later chapters, we will continue
@@ -554,7 +652,7 @@ such as weight decay and dropout.
 
 * Since the generalization error rate cannot be estimated based on the training error rate, simply minimizing the training error rate will not necessarily mean a reduction in the generalization error rate. Machine learning models need to be careful to safeguard against overfitting such as to minimize the generalization error.
 * A validation set can be used for model selection (provided that it is not used too liberally).
-* Underfitting means that the model is not able to reduce the training error rate while overfitting is a result of the model training error rate being much lower than the testing dataset rate.
+* Underfitting means that the model is not able to reduce the training error rate, while overfitting is a result of the model training error rate being much lower than the testing dataset rate.
 * We should choose an appropriately complex model and avoid using insufficient training samples.
 
 
@@ -569,6 +667,11 @@ such as weight decay and dropout.
 1. What degree of polynomial do you need to reduce the training error to 0?
 1. Can you ever expect to see 0 generalization error?
 
-## [Discussions](https://discuss.mxnet.io/t/2341)
 
-![](../img/qr_underfit-overfit.svg)
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/96)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/97)
+:end_tab:

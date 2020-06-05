@@ -14,7 +14,7 @@ cell (as opposed to reading any other cell). We will refer to this as the
 cell. We refer to this as the *input* gate. Last, we need a mechanism to reset
 the contents of the cell, governed by a *forget* gate. The motivation for such a
 design is the same as before, namely to be able to decide when to remember and
-when to ignore inputs in the latent state via a dedicated mechanism. Let's see
+when to ignore inputs in the latent state via a dedicated mechanism. Let us see
 how this works in practice.
 
 ## Gated Memory Cells
@@ -23,7 +23,7 @@ Three gates are introduced in LSTMs: the input gate, the forget gate, and the ou
 
 ### Input Gates, Forget Gates, and Output Gates
 
-Just like with GRUs, the data feeding into the LSTM gates is the input at the current timestep $\mathbf{X}_t$ and the hidden state of the previous timestep $\mathbf{H}_{t-1}$. These inputs are processed by a fully connected layer and a sigmoid activation function to compute the values of input, forget and output gates. As a result, the three gates all output values in the range of $[0, 1]$. :numref:`lstm_0` illustrates the data flow for the input, forget, and output gates.
+Just like with GRUs, the data feeding into the LSTM gates is the input at the current timestep $\mathbf{X}_t$ and the hidden state of the previous timestep $\mathbf{H}_{t-1}$. These inputs are processed by a fully connected layer and a sigmoid activation function to compute the values of input, forget and output gates. As a result, the three gates' all output values are in the range of $[0, 1]$. :numref:`lstm_0` illustrates the data flow for the input, forget, and output gates.
 
 ![Calculation of input, forget, and output gates in an LSTM. ](../img/lstm_0.svg)
 :label:`lstm_0`
@@ -81,10 +81,10 @@ $$\mathbf{H}_t = \mathbf{O}_t \odot \tanh(\mathbf{C}_t).$$
 
 ## Implementation from Scratch
 
-Now let's implement an LSTM from scratch. As same as the experiments in the previous sections, we first load data of *The Time Machine*.
+Now let us implement an LSTM from scratch. As same as the experiments in the previous sections, we first load data of *The Time Machine*.
 
 ```{.python .input  n=1}
-import d2l
+from d2l import mxnet as d2l
 from mxnet import np, npx
 from mxnet.gluon import rnn
 npx.set_np()
@@ -156,7 +156,7 @@ def lstm(inputs, state, params):
 
 ### Training and Prediction
 
-Let's train an LSTM as same as what we did in :numref:`sec_gru`, by calling the `RNNModelScratch` function as introduced in :numref:`sec_rnn_scratch`.
+Let us train an LSTM as same as what we did in :numref:`sec_gru`, by calling the `RNNModelScratch` function as introduced in :numref:`sec_rnn_scratch`.
 
 ```{.python .input  n=9}
 vocab_size, num_hiddens, ctx = len(vocab), 256, d2l.try_gpu()

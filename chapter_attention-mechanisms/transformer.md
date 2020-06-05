@@ -1,7 +1,7 @@
 # Transformer
 :label:`sec_transformer`
 
-In previous chapters, we have covered major neural network architectures such as convolution neural networks (CNNs) and  recurrent neural networks (RNNs). Let's recap their pros and cons:
+In previous chapters, we have covered major neural network architectures such as convolution neural networks (CNNs) and  recurrent neural networks (RNNs). Let us recap their pros and cons:
 
 * **CNNs** are easy to parallelize at a layer but cannot capture the variable-length sequential dependency very well.
 
@@ -31,7 +31,7 @@ On the flip side, Transformer differs from the seq2seq with attention model in t
 In the rest of this section, we will equip you with each new component introduced by Transformer, and get you up and running to construct a machine translation model.
 
 ```{.python .input  n=1}
-import d2l
+from d2l import mxnet as d2l
 import math
 from mxnet import autograd, np, npx
 from mxnet.gluon import nn
@@ -40,7 +40,7 @@ npx.set_np()
 
 ## Multi-Head Attention
 
-Before the discussion of the *multi-head attention* layer, let's quick express the *self-attention* architecture. The self-attention model is a normal attention model, with its query, its key, and its value being copied exactly the same from each item of the sequential inputs. As we illustrate in :numref:`fig_self_attention`, self-attention outputs a same-length sequential output for each input item. Compared with a recurrent layer, output items of a self-attention layer can be computed in parallel and, therefore, it is easy to obtain a highly-efficient implementation.
+Before the discussion of the *multi-head attention* layer, let us quick express the *self-attention* architecture. The self-attention model is a normal attention model, with its query, its key, and its value being copied exactly the same from each item of the sequential inputs. As we illustrate in :numref:`fig_self_attention`, self-attention outputs a same-length sequential output for each input item. Compared with a recurrent layer, output items of a self-attention layer can be computed in parallel and, therefore, it is easy to obtain a highly-efficient implementation.
 
 ![Self-attention architecture.](../img/self-attention.svg)
 :label:`fig_self_attention`
@@ -59,7 +59,7 @@ and $\mathbf W_v^{(i)}\in\mathbb R^{p_v\times d_v}$. Therefore, the output for e
 
 $$\mathbf o^{(i)} = \textrm{attention}(\mathbf W_q^{(i)}\mathbf q, \mathbf W_k^{(i)}\mathbf k,\mathbf W_v^{(i)}\mathbf v),$$
 
-where $\textrm{attention}$ can be any attention layer, such as the `DotProductAttention` and `MLPAttention` as we introduced in :label:`sec_attention`.
+where $\textrm{attention}$ can be any attention layer, such as the `DotProductAttention` and `MLPAttention` as we introduced in :numref:`sec_attention`.
 
 
 
@@ -71,16 +71,16 @@ $$\mathbf o = \mathbf W_o \begin{bmatrix}\mathbf o^{(1)}\\\vdots\\\mathbf o^{(h)
 Now we can implement the multi-head attention. Assume that the multi-head attention contain the number heads `num_heads` $=h$, the hidden size `num_hiddens` $=p_q=p_k=p_v$ are the same for the query,  key, and value dense layers. In addition, since the multi-head attention keeps the same dimensionality between its input and its output, we have the output feature size $d_o =$ `num_hiddens` as well.
 
 ```{.python .input  n=2}
-# Saved in the d2l package for later use
+#@save
 class MultiHeadAttention(nn.Block):
-    def __init__(self, num_hiddens, num_heads, dropout, **kwargs):
+    def __init__(self, num_hiddens, num_heads, dropout, use_bias=False, **kwargs):
         super(MultiHeadAttention, self).__init__(**kwargs)
         self.num_heads = num_heads
         self.attention = d2l.DotProductAttention(dropout)
-        self.W_q = nn.Dense(num_hiddens, use_bias=False, flatten=False)
-        self.W_k = nn.Dense(num_hiddens, use_bias=False, flatten=False)
-        self.W_v = nn.Dense(num_hiddens, use_bias=False, flatten=False)
-        self.W_o = nn.Dense(num_hiddens, use_bias=False, flatten=False)
+        self.W_q = nn.Dense(num_hiddens, use_bias=use_bias, flatten=False)
+        self.W_k = nn.Dense(num_hiddens, use_bias=use_bias, flatten=False)
+        self.W_v = nn.Dense(num_hiddens, use_bias=use_bias, flatten=False)
+        self.W_o = nn.Dense(num_hiddens, use_bias=use_bias, flatten=False)
 
     def forward(self, query, key, value, valid_len):
         # For self-attention, query, key, and value shape:
@@ -114,7 +114,7 @@ class MultiHeadAttention(nn.Block):
 Here are the definitions of the transpose functions `transpose_qkv` and `transpose_output`, which are the inverse of each other.
 
 ```{.python .input  n=3}
-# Saved in the d2l package for later use
+#@save
 def transpose_qkv(X, num_heads):
     # Input X shape: (batch_size, seq_len, num_hiddens).
     # Output X shape:
@@ -129,7 +129,7 @@ def transpose_qkv(X, num_heads):
     return output
 
 
-# Saved in the d2l package for later use
+#@save
 def transpose_output(X, num_heads):
     # A reversed version of transpose_qkv
     X = X.reshape(-1, num_heads, X.shape[1], X.shape[2])
@@ -137,7 +137,7 @@ def transpose_output(X, num_heads):
     return X.reshape(X.shape[0], X.shape[1], -1)
 ```
 
-Let's test the `MultiHeadAttention` model in the a toy example. Create a multi-head attention with the hidden size $d_o = 100$, the output will share the same batch size and sequence length as the input, but the last dimension will be equal to the `num_hiddens` $= 100$.
+Let us test the `MultiHeadAttention` model in the a toy example. Create a multi-head attention with the hidden size $d_o = 100$, the output will share the same batch size and sequence length as the input, but the last dimension will be equal to the `num_hiddens` $= 100$.
 
 ```{.python .input  n=4}
 cell = MultiHeadAttention(90, 9, 0.5)
@@ -154,7 +154,7 @@ Another key component in the Transformer block is called *position-wise feed-for
 Below, the `PositionWiseFFN` shows how to implement a position-wise FFN with two dense layers of hidden size `ffn_num_hiddens` and `pw_num_outputs`, respectively.
 
 ```{.python .input  n=5}
-# Saved in the d2l package for later use
+#@save
 class PositionWiseFFN(nn.Block):
     def __init__(self, ffn_num_hiddens, pw_num_outputs, **kwargs):
         super(PositionWiseFFN, self).__init__(**kwargs)
@@ -176,9 +176,9 @@ ffn(np.ones((2, 3, 4)))[0]
 
 ## Add and Norm
 
-Besides the above two components in the Transformer block, the "add and norm" within the block also plays a key role to connect the inputs and outputs of other layers smoothly. To explain, we add a layer that contains a residual structure and a *layer normalization* after both the multi-head attention layer and the position-wise FFN network. *Layer normalization* is similar to batch normalization in :numref:`sec_batch_norm`. One difference is that the mean and variances for the layer normalization are calculated along the last dimension, e.g `X.mean(axis=-1)` instead of the first batch dimension, e.g., `X.mean(axis=0)`. Layer normalization prevents the range of values in the layers from changing too much, which means that faster training and better generalization ability.
+Besides the above two components in the Transformer block, the "add and norm" within the block also plays a key role to connect the inputs and outputs of other layers smoothly. To explain, we add a layer that contains a residual structure and a *layer normalization* after both the multi-head attention layer and the position-wise FFN network. *Layer normalization* is similar to batch normalization in :numref:`sec_batch_norm`. One difference is that the mean and variances for the layer normalization are calculated along the last dimension, e.g `X.mean(axis=-1)` instead of the first batch dimension, e.g., `X.mean(axis=0)`. Layer normalization prevents the range of values in the layers from changing too much, which allows faster training and better generalization ability.
 
-MXNet has both `LayerNorm` and `BatchNorm` implemented within the `nn` block. Let's call both of them and see the difference in the  example below.
+MXNet has both `LayerNorm` and `BatchNorm` implemented within the `nn` block. Let us call both of them and see the difference in the  example below.
 
 ```{.python .input  n=7}
 layer = nn.LayerNorm()
@@ -191,10 +191,10 @@ with autograd.record():
     print('layer norm:', layer(X), '\nbatch norm:', batch(X))
 ```
 
-Now let's implement the connection block `AddNorm` together. `AddNorm` accepts two inputs $X$ and $Y$. We can deem $X$ as the original input in the residual network, and $Y$ as the outputs from either the multi-head attention layer or the position-wise FFN network. In addition, we apply dropout on $Y$ for regularization.
+Now let us implement the connection block `AddNorm` together. `AddNorm` accepts two inputs $X$ and $Y$. We can deem $X$ as the original input in the residual network, and $Y$ as the outputs from either the multi-head attention layer or the position-wise FFN network. In addition, we apply dropout on $Y$ for regularization.
 
 ```{.python .input  n=8}
-# Saved in the d2l package for later use
+#@save
 class AddNorm(nn.Block):
     def __init__(self, dropout, **kwargs):
         super(AddNorm, self).__init__(**kwargs)
@@ -234,7 +234,7 @@ for $i=0,\ldots, l-1$ and $j=0,\ldots,\lfloor(d-1)/2\rfloor$.
 :label:`fig_positional_encoding`
 
 ```{.python .input  n=10}
-# Saved in the d2l package for later use
+#@save
 class PositionalEncoding(nn.Block):
     def __init__(self, num_hiddens, dropout, max_len=1000):
         super(PositionalEncoding, self).__init__()
@@ -263,15 +263,16 @@ d2l.plot(np.arange(100), Y[0, :, 4:8].T, figsize=(6, 2.5),
 
 ## Encoder
 
-Armed with all the essential components of Transformer, let's first build a Transformer encoder block. This encoder contains a multi-head attention layer, a position-wise feed-forward network, and two "add and norm" connection blocks. As shown in the code, for both of the attention model and the positional FFN model in the `EncoderBlock`, their outputs' dimension are equal to the `num_hiddens`. This is due to the nature of the residual block, as we need to add these outputs back to the original value during "add and norm".
+Armed with all the essential components of Transformer, let us first build a Transformer encoder block. This encoder contains a multi-head attention layer, a position-wise feed-forward network, and two "add and norm" connection blocks. As shown in the code, for both of the attention model and the positional FFN model in the `EncoderBlock`, their outputs' dimension are equal to the `num_hiddens`. This is due to the nature of the residual block, as we need to add these outputs back to the original value during "add and norm".
 
 ```{.python .input  n=12}
-# Saved in the d2l package for later use
+#@save
 class EncoderBlock(nn.Block):
     def __init__(self, num_hiddens, ffn_num_hiddens, num_heads, dropout,
-                 **kwargs):
+                 use_bias=False, **kwargs):
         super(EncoderBlock, self).__init__(**kwargs)
-        self.attention = MultiHeadAttention(num_hiddens, num_heads, dropout)
+        self.attention = MultiHeadAttention(num_hiddens, num_heads, dropout,
+                                            use_bias)
         self.addnorm1 = AddNorm(dropout)
         self.ffn = PositionWiseFFN(ffn_num_hiddens, num_hiddens)
         self.addnorm2 = AddNorm(dropout)
@@ -293,10 +294,10 @@ encoder_blk(X, valid_len).shape
 Now it comes to the implementation of the entire Transformer encoder. With the Transformer encoder, $n$ blocks of `EncoderBlock` stack up one after another. Because of the residual connection, the embedding layer size $d$ is same as the Transformer block output size. Also note that we multiply the embedding output by $\sqrt{d}$ to prevent its values from being too small.
 
 ```{.python .input  n=14}
-# Saved in the d2l package for later use
+#@save
 class TransformerEncoder(d2l.Encoder):
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens,
-                 num_heads, num_layers, dropout, **kwargs):
+                 num_heads, num_layers, dropout, use_bias=False, **kwargs):
         super(TransformerEncoder, self).__init__(**kwargs)
         self.num_hiddens = num_hiddens
         self.embedding = nn.Embedding(vocab_size, num_hiddens)
@@ -304,7 +305,7 @@ class TransformerEncoder(d2l.Encoder):
         self.blks = nn.Sequential()
         for _ in range(num_layers):
             self.blks.add(
-                EncoderBlock(num_hiddens, ffn_num_hiddens, num_heads, dropout))
+                EncoderBlock(num_hiddens, ffn_num_hiddens, num_heads, dropout, use_bias))
 
     def forward(self, X, valid_len, *args):
         X = self.pos_encoding(self.embedding(X) * math.sqrt(self.num_hiddens))
@@ -313,7 +314,7 @@ class TransformerEncoder(d2l.Encoder):
         return X
 ```
 
-Let's create an encoder with two stacked  Transformer encoder blocks, whose hyperparameters are the same as before. Similar to the previous toy example's parameters, we add two more parameters `vocab_size` to be $200$ and `num_layers` to be $2$ here.
+Let us create an encoder with two stacked  Transformer encoder blocks, whose hyperparameters are the same as before. Similar to the previous toy example's parameters, we add two more parameters `vocab_size` to be $200$ and `num_layers` to be $2$ here.
 
 ```{.python .input  n=15}
 encoder = TransformerEncoder(200, 24, 48, 8, 2, 0.5)
@@ -382,7 +383,7 @@ decoder_blk(X, state)[0].shape
 
 The construction of the entire  Transformer decoder is identical to the  Transformer encoder, except for the additional dense layer to obtain the output confidence scores.
 
-Let's implement the  Transformer decoder `TransformerDecoder`. Besides the regular hyperparameters such as the `vocab_size` and `num_hiddens`, the  Transformer decoder also needs the Transformer encoder's outputs `enc_outputs` and `env_valid_len`.
+Let us implement the  Transformer decoder `TransformerDecoder`. Besides the regular hyperparameters such as the `vocab_size` and `num_hiddens`, the  Transformer decoder also needs the Transformer encoder's outputs `enc_outputs` and `env_valid_len`.
 
 ```{.python .input  n=18}
 class TransformerDecoder(d2l.Decoder):

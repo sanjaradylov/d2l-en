@@ -40,11 +40,11 @@ $$min_D max_G \{ -E_{x \sim \text{Data}} log D(\mathbf x) - E_{z \sim \text{Nois
 
 
 
-Many of the GANs applications are in the context of images. As a demonstration purpose, we are going to content ourselves with fitting a much simpler distribution first. We will illustrate what happens if we use GANs to build the world's most inefficient estimator of parameters for a Gaussian. Let's get started.
+Many of the GANs applications are in the context of images. As a demonstration purpose, we are going to content ourselves with fitting a much simpler distribution first. We will illustrate what happens if we use GANs to build the world's most inefficient estimator of parameters for a Gaussian. Let us get started.
 
 ```{.python .input  n=1}
 %matplotlib inline
-import d2l
+from d2l import mxnet as d2l
 from mxnet import autograd, gluon, init, np, npx
 from mxnet.gluon import nn
 npx.set_np()
@@ -61,7 +61,7 @@ b = np.array([1, 2])
 data = X.dot(A) + b
 ```
 
-Let's see what we got. This should be a Gaussian shifted in some rather arbitrary way with mean $b$ and covariance matrix $A^TA$.
+Let us see what we got. This should be a Gaussian shifted in some rather arbitrary way with mean $b$ and covariance matrix $A^TA$.
 
 ```{.python .input  n=3}
 d2l.set_figsize((3.5, 2.5))
@@ -99,7 +99,7 @@ net_D.add(nn.Dense(5, activation='tanh'),
 First we define a function to update the discriminator.
 
 ```{.python .input  n=7}
-# Saved in the d2l package for later use
+#@save
 def update_D(X, Z, net_D, net_G, loss, trainer_D):
     """Update discriminator."""
     batch_size = X.shape[0]
@@ -120,7 +120,7 @@ def update_D(X, Z, net_D, net_G, loss, trainer_D):
 The generator is updated similarly. Here we reuse the cross-entropy loss but change the label of the fake data from $0$ to $1$.
 
 ```{.python .input  n=8}
-# Saved in the d2l package for later use
+#@save
 def update_G(Z, net_D, net_G, loss, trainer_G):  # saved in d2l
     """Update generator."""
     batch_size = Z.shape[0]

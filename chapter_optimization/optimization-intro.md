@@ -20,12 +20,12 @@ reduce the training error. We begin by importing a few libraries with a function
 
 ```{.python .input  n=1}
 %matplotlib inline
-import d2l
+from d2l import mxnet as d2l
 from mpl_toolkits import mplot3d
 from mxnet import np, npx
 npx.set_np()
 
-# Saved in the d2l package for later use
+#@save
 def annotate(text, xy, xytext):
     d2l.plt.gca().annotate(text, xy=xy, xytext=xytext,
                            arrowprops=dict(arrowstyle='->'))
@@ -55,7 +55,7 @@ complicated and do not have analytical solutions. Instead, we must use numerical
 optimization algorithms. The optimization algorithms below all fall into this
 category.
 
-There are many challenges in deep learning optimization. Some of the most vexing ones are local minima, saddle points and vanishing gradients. Let's have a look at a few of them.
+There are many challenges in deep learning optimization. Some of the most vexing ones are local minima, saddle points and vanishing gradients. Let us have a look at a few of them.
 
 ### Local Minima
 

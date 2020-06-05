@@ -14,14 +14,14 @@ interest appear in different positions, reducing the model's dependence on the
 position where objects appear. We can also adjust the brightness, color, and
 other factors to reduce model's sensitivity to color. It can be said that image
 augmentation technology contributed greatly to the success of AlexNet. In this
-section we will discuss this technology, which is widely used in computer
+section, we will discuss this technology, which is widely used in computer
 vision.
 
 First, import the packages or modules required for the experiment in this section.
 
 ```{.python .input  n=1}
 %matplotlib inline
-import d2l
+from d2l import mxnet as d2l
 from mxnet import autograd, gluon, image, init, np, npx
 from mxnet.gluon import nn
 
@@ -118,7 +118,7 @@ d2l.show_images(gluon.data.vision.CIFAR10(
     train=True)[0:32][0], 4, 8, scale=0.8);
 ```
 
-In order to obtain a definitive results during prediction, we usually only apply image augmentation to the training example, and do not use image augmentation with random operations during prediction. Here, we only use the simplest random left-right flipping method. In addition, we use a `ToTensor` instance to convert minibatch images into the format required by MXNet, i.e., 32-bit floating point numbers with the shape of (batch size, number of channels, height, width) and value range between 0 and 1.
+In order to obtain definitive results during prediction, we usually only apply image augmentation to the training example, and do not use image augmentation with random operations during prediction. Here, we only use the simplest random left-right flipping method. In addition, we use a `ToTensor` instance to convert minibatch images into the format required by MXNet, i.e., 32-bit floating point numbers with the shape of (batch size, number of channels, height, width) and value range between 0 and 1.
 
 ```{.python .input  n=12}
 train_augs = gluon.data.vision.transforms.Compose([
@@ -133,7 +133,7 @@ Next, we define an auxiliary function to make it easier to read the image and
 apply image augmentation. The `transform_first` function provided by Gluon's
 dataset applies image augmentation to the first element of each training
 example (image and label), i.e., the element at the top of the image. For
-detailed description of `DataLoader`, refer to :numref:`sec_fashion_mnist`.
+detailed descriptions of `DataLoader`, refer to :numref:`sec_fashion_mnist`.
 
 ```{.python .input  n=13}
 def load_cifar10(is_train, augs, batch_size):
@@ -152,7 +152,7 @@ CIFAR-10 dataset. We will also apply the methods described in
 Next, we define the training function to train and evaluate the model using multiple GPUs.
 
 ```{.python .input  n=14}
-# Saved in the d2l package for later use
+#@save
 def train_batch_ch13(net, features, labels, loss, trainer, ctx_list,
                      split_f=d2l.split_batch):
     X_shards, y_shards = split_f(features, labels, ctx_list)
@@ -162,7 +162,9 @@ def train_batch_ch13(net, features, labels, loss, trainer, ctx_list,
               in zip(pred_shards, y_shards)]
     for l in ls:
         l.backward()
-    trainer.step(labels.shape[0])
+    # The True flag allows parameters with stale gradients, which is useful
+    # later (e.g., in fine-tuning BERT)
+    trainer.step(labels.shape[0], ignore_stale_grad=True)
     train_loss_sum = sum([float(l.sum()) for l in ls])
     train_acc_sum = sum(d2l.accuracy(pred_shard, y_shard)
                         for pred_shard, y_shard in zip(pred_shards, y_shards))
@@ -170,7 +172,7 @@ def train_batch_ch13(net, features, labels, loss, trainer, ctx_list,
 ```
 
 ```{.python .input  n=16}
-# Saved in the d2l package for later use
+#@save
 def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
                ctx_list=d2l.try_all_gpus(), split_f=d2l.split_batch):
     num_batches, timer = len(train_iter), d2l.Timer()
@@ -221,7 +223,7 @@ train_with_data_aug(train_augs, test_augs, net)
 ## Summary
 
 * Image augmentation generates random images based on existing training data to cope with overfitting.
-* In order to obtain a definitive results during prediction, we usually only apply image augmentation to the training example, and do not use image augmentation with random operations during prediction.
+* In order to obtain definitive results during prediction, we usually only apply image augmentation to the training example, and do not use image augmentation with random operations during prediction.
 * We can obtain classes related to image augmentation from Gluon's `transforms` module.
 
 ## Exercises

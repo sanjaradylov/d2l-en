@@ -1,7 +1,7 @@
 # Dropout
 :label:`sec_dropout`
 
-Just now, in :numref:`sec_weight_decay`,
+In :numref:`sec_weight_decay`,
 we introduced the classical approach
 to regularizing statistical models 
 by penalizing the $\ell_2$ norm of the weights.
@@ -11,7 +11,7 @@ that weights take values from
 a Gaussian distribution with mean $0$.
 More intuitively, we might argue
 that we encouraged the model to spread out its weights
-among many features and rather than depending too much
+among many features rather than depending too much
 on a small number of potentially spurious associations.
 
 ## Overfitting Revisited
@@ -37,7 +37,7 @@ across different random samples of the data).
 
 Deep neural networks inhabit the opposite 
 end of the bias-variance spectrum.
-Unlike linear models, neural networks,
+Unlike linear models, neural networks
 are not confined to looking at each feature individually.
 They can learn interactions among groups of features.
 For example, they might infer that 
@@ -76,7 +76,7 @@ to improve the generalization of deep nets.
 
 ## Robustness through Perturbations
 
-Let's think briefly about what we 
+Let us think briefly about what we 
 expect from a good predictive model.
 We want it to peform well on unseen data.
 Classical generalization theory
@@ -84,17 +84,17 @@ suggests that to close the gap between
 train and test performance, 
 we should aim for a *simple* model.
 Simplicity can come in the form
-of a small number of dimensions,
-as we explored when discussing 
-linear models monomial basis functions
+of a small number of dimensions.
+We explored this when discussing the
+monomial basis functions of linear models
 :numref:`sec_model_selection`.
-As we saw when discussing weight decay 
+Additionally, as we saw when discussing weight decay 
 ($\ell_2$ regularization) :numref:`sec_weight_decay`,
 the (inverse) norm of the parameters 
 represents another useful measure of simplicity.
 Another useful notion of simplicity is smoothness,
 i.e., that the function should not be sensitive
-to small changed to its inputs.
+to small changes to its inputs.
 For instance, when we classify images,
 we would expect that adding some random noise
 to the pixels should be mostly harmless.
@@ -115,7 +115,7 @@ into each layer of the network
 before calculating the subsequent layer during training.
 They realized that when training 
 a deep network with many layers,
-enforcing smoothness just on the input-output mapping.
+injecting noise enforces smoothness just on the input-output mapping.
 
 Their idea, called *dropout*, involves 
 injecting noise while computing 
@@ -145,8 +145,8 @@ break up co-adapted genes.
 
 The key challenge then is *how* to inject this noise.
 One idea is to inject the noise in an *unbiased* manner
-so that the expected value of each layer---fixing 
-the others equal to the value it would have taken absent noise.
+so that the expected value of each layer---while fixing 
+the others---equals to the value it would have taken absent noise.
 
 In Bishop's work, he added Gaussian noise 
 to the inputs to a linear model:
@@ -240,8 +240,8 @@ with probability `dropout`,
 rescaling the remainder as described above
 (dividing the survivors by `1.0-dropout`).
 
-```{.python .input  n=1}
-import d2l
+```{.python .input}
+from d2l import mxnet as d2l
 from mxnet import autograd, gluon, init, np, npx
 from mxnet.gluon import nn
 npx.set_np()
@@ -258,16 +258,43 @@ def dropout_layer(X, dropout):
     return mask.astype(np.float32) * X / (1.0-dropout)
 ```
 
+```{.python .input}
+#@tab pytorch
+from d2l import torch as d2l
+import torch
+from torch import nn
+
+def dropout_layer(X, dropout):
+    assert 0 <= dropout <= 1
+    # In this case, all elements are dropped out
+    if dropout == 1:
+        return torch.zeros_like(X)
+    # In this case, all elements are kept
+    if dropout == 0:
+        return X
+    mask = (torch.Tensor(X.shape).uniform_(0, 1) > dropout).float()
+    return mask * X / (1.0-dropout)
+```
+
 We can test out the `dropout_layer` function on a few examples.
 In the following lines of code, 
 we pass our input `X` through the dropout operation,
 with probabilities 0, 0.5, and 1, respectively.
 
-```{.python .input  n=2}
+```{.python .input}
 X = np.arange(16).reshape(2, 8)
 print(dropout_layer(X, 0))
 print(dropout_layer(X, 0.5))
 print(dropout_layer(X, 1))
+```
+
+```{.python .input}
+#@tab pytorch
+X= torch.arange(16, dtype = torch.float32).reshape((2, 8))
+print(X)
+print(dropout_layer(X, 0.))
+print(dropout_layer(X, 0.5))
+print(dropout_layer(X, 1.))
 ```
 
 ### Defining Model Parameters
@@ -277,7 +304,7 @@ introduced in :numref:`sec_softmax_scratch`.
 We define a multilayer perceptron with 
 two hidden layers containing 256 outputs each.
 
-```{.python .input  n=3}
+```{.python .input}
 num_inputs, num_outputs, num_hiddens1, num_hiddens2 = 784, 10, 256, 256
 
 W1 = np.random.normal(scale=0.01, size=(num_inputs, num_hiddens1))
@@ -292,6 +319,11 @@ for param in params:
     param.attach_grad()
 ```
 
+```{.python .input}
+#@tab pytorch
+num_inputs, num_outputs, num_hiddens1, num_hiddens2 = 784, 10, 256, 256
+```
+
 ### Defining the Model
 
 The model below applies dropout to the output 
@@ -301,10 +333,10 @@ A common trend is to set
 a lower dropout probability closer to the input layer.
 Below we set it to 0.2 and 0.5 for the first 
 and second hidden layer respectively.
- By using the `is_training` function described in :numref:`sec_autograd`,
+By checking `is_training` described in :numref:`sec_autograd`,
  we can ensure that dropout is only active during training.
 
-```{.python .input  n=4}
+```{.python .input}
 dropout1, dropout2 = 0.2, 0.5
 
 def net(X):
@@ -321,16 +353,60 @@ def net(X):
     return np.dot(H2, W3) + b3
 ```
 
+```{.python .input}
+#@tab pytorch
+dropout1, dropout2 = 0.2, 0.5
+
+class Net(nn.Module):
+    def __init__(self, num_inputs, num_outputs, num_hiddens1, num_hiddens2,
+                 is_training = True):
+        super(Net, self).__init__()
+        
+        self.num_inputs = num_inputs
+        self.is_training = is_training
+        
+        self.lin1 = nn.Linear(num_inputs, num_hiddens1)
+        self.lin2 = nn.Linear(num_hiddens1, num_hiddens2)
+        self.lin3 = nn.Linear(num_hiddens2, num_outputs)
+        
+        self.relu = nn.ReLU()
+    
+    def forward(self, X):
+        H1 = self.relu(self.lin1(X.reshape((-1, self.num_inputs))))
+        # Use dropout only when training the model
+        if self.is_training == True:
+            # Add a dropout layer after the first fully connected layer
+            H1 = dropout_layer(H1, dropout1)
+        H2 = self.relu(self.lin2(H1))
+        if self.is_training == True:
+            # Add a dropout layer after the second fully connected layer
+            H2 = dropout_layer(H2, dropout2)
+        out = self.lin3(H2)
+        return out
+
+
+net = Net(num_inputs, num_outputs, num_hiddens1, num_hiddens2)
+```
+
 ### Training and Testing
 
 This is similar to the training and testing of multilayer perceptrons described previously.
 
-```{.python .input  n=5}
+```{.python .input}
 num_epochs, lr, batch_size = 10, 0.5, 256
 loss = gluon.loss.SoftmaxCrossEntropyLoss()
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
 d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs,
               lambda batch_size: d2l.sgd(params, lr, batch_size))
+```
+
+```{.python .input}
+#@tab pytorch
+num_epochs, lr, batch_size = 10, 0.5, 256
+loss = nn.CrossEntropyLoss()
+train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
+trainer = torch.optim.SGD(net.parameters(), lr=lr)
+d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
 ```
 
 ## Concise Implementation
@@ -347,7 +423,7 @@ according to the specified dropout probability.
 When MXNet is not in training mode,
 the `Dropout` layer simply passes the data through during testing.
 
-```{.python .input  n=6}
+```{.python .input}
 net = nn.Sequential()
 net.add(nn.Dense(256, activation="relu"),
         # Add a dropout layer after the first fully connected layer
@@ -359,10 +435,36 @@ net.add(nn.Dense(256, activation="relu"),
 net.initialize(init.Normal(sigma=0.01))
 ```
 
+```{.python .input}
+#@tab pytorch
+net = nn.Sequential(nn.Flatten(),
+        nn.Linear(784, 256),
+        nn.ReLU(),
+        # Add a dropout layer after the first fully connected layer
+        nn.Dropout(dropout1),
+        nn.Linear(256, 256),
+        nn.ReLU(),
+        # Add a dropout layer after the second fully connected layer
+        nn.Dropout(dropout2),
+        nn.Linear(256, 10))
+
+def init_weights(m):
+    if type(m) == nn.Linear:
+        torch.nn.init.normal_(m.weight, std=0.01)
+
+net.apply(init_weights)
+```
+
 Next, we train and test the model.
 
-```{.python .input  n=7}
+```{.python .input}
 trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate': lr})
+d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
+```
+
+```{.python .input}
+#@tab pytorch
+trainer = torch.optim.SGD(net.parameters(), lr=lr)
 d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
 ```
 
@@ -379,11 +481,16 @@ d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
 1. Increase the number of epochs and compare the results obtained when using dropout with those when not using it.
 1. What is the variance of the activations in each hidden layer when dropout is and is not applied? Draw a plot to show how this quantity evolves over time for both models. 
 1. Why is dropout not typically used at test time?
-1. Using the model in this section as an example, compare the effects of using dropout and weight decay. What happens when dropout and weight decay are used at the same time? Are the results additive, are their diminish returns or (worse), do they cancel each other out?
+1. Using the model in this section as an example, compare the effects of using dropout and weight decay. What happens when dropout and weight decay are used at the same time? Are the results additive, are there diminished returns or (worse), do they cancel each other out?
 1. What happens if we apply dropout to the individual weights of the weight matrix rather than the activations?
-1. Invent another technique for injecting random noise at each layer that is different from the standard dropout technique. Can you develop a method that outperforms dropout on the FashionMNIST dataset (for a fixed architecture)?
+1. Invent another technique for injecting random noise at each layer that is different from the standard dropout technique. Can you develop a method that outperforms dropout on the Fashion-MNIST dataset (for a fixed architecture)?
 
 
-## [Discussions](https://discuss.mxnet.io/t/2343)
 
-![](../img/qr_dropout.svg)
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/100)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/101)
+:end_tab:

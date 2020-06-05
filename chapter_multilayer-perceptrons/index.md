@@ -24,7 +24,7 @@ scalability and efficiency of our models to subsequent chapters.
 
 mlp
 mlp-scratch
-mlp-gluon
+mlp-concise
 underfit-overfit
 weight-decay
 dropout
@@ -33,3 +33,4 @@ numerical-stability-and-init
 environment
 kaggle-house-price
 ```
+

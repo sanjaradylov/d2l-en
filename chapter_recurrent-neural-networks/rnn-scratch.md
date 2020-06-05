@@ -5,7 +5,7 @@ In this section we implement a language model introduced in :numref:`chap_rnn` f
 
 ```{.python .input  n=14}
 %matplotlib inline
-import d2l
+from d2l import mxnet as d2l
 import math
 from mxnet import autograd, np, npx, gluon
 npx.set_np()
@@ -89,7 +89,7 @@ def rnn(inputs, state, params):
 Now we have all functions defined, next we create a class to wrap these functions and store parameters.
 
 ```{.python .input}
-# Saved in the d2l package for later use
+#@save
 class RNNModelScratch:
     """A RNN Model based on scratch implementations."""
 
@@ -107,7 +107,7 @@ class RNNModelScratch:
         return self.init_state(batch_size, self.num_hiddens, ctx)
 ```
 
-Let's do a sanity check whether inputs and outputs have the correct dimensions, e.g., to ensure that the dimensionality of the hidden state has not changed.
+Let us do a sanity check whether inputs and outputs have the correct dimensions, e.g., to ensure that the dimensionality of the hidden state has not changed.
 
 ```{.python .input}
 num_hiddens, ctx = 512, d2l.try_gpu()
@@ -125,7 +125,7 @@ We can see that the output shape is (number steps $\times$ batch size, vocabular
 We first explain the predicting function so we can regularly check the prediction during training. This function predicts the next `num_predicts` characters based on the `prefix` (a string containing several characters). For the beginning of the sequence, we only update the hidden state. After that we begin generating new characters and emitting them.
 
 ```{.python .input}
-# Saved in the d2l package for later use
+#@save
 def predict_ch8(prefix, num_predicts, model, vocab, ctx):
     state = model.begin_state(batch_size=1, ctx=ctx)
     outputs = [vocab[prefix[0]]]
@@ -141,7 +141,7 @@ def predict_ch8(prefix, num_predicts, model, vocab, ctx):
     return ''.join([vocab.idx_to_token[i] for i in outputs])
 ```
 
-We test the `predict_rnn` function first. Given that we did not train the network, it will generate nonsensical predictions. We initialize it with the sequence `traveller ` and have it generate 10 additional characters.
+We test the `predict_ch8` function first. Given that we did not train the network, it will generate nonsensical predictions. We initialize it with the sequence `traveller ` and have it generate 10 additional characters.
 
 ```{.python .input  n=9}
 predict_ch8('time traveller ', 10, model, vocab, ctx)
@@ -151,7 +151,7 @@ predict_ch8('time traveller ', 10, model, vocab, ctx)
 
 For a sequence of length $T$, we compute the gradients over these $T$ timesteps in an iteration, which results in a chain of matrix-products with length  $\mathcal{O}(T)$ during backpropagating. As mentioned in :numref:`sec_numerical_stability`, it might result in numerical instability, e.g., the gradients may either explode or vanish, when $T$ is large. Therefore, RNN models often need extra help to stabilize the training.
 
-Recall that when solving an optimization problem, we take update steps for the weights $\mathbf{w}$ in the general direction of the negative gradient $\mathbf{g}_t$ on a minibatch, say $\mathbf{w} - \eta \cdot \mathbf{g}_t$. Let's further assume that the objective is well behaved, i.e., it is Lipschitz continuous with constant $L$, i.e.,
+Recall that when solving an optimization problem, we take update steps for the weights $\mathbf{w}$ in the general direction of the negative gradient $\mathbf{g}_t$ on a minibatch, say $\mathbf{w} - \eta \cdot \mathbf{g}_t$. Let us further assume that the objective is well behaved, i.e., it is Lipschitz continuous with constant $L$, i.e.,
 
 $$|l(\mathbf{w}) - l(\mathbf{w}')| \leq L \|\mathbf{w} - \mathbf{w}'\|.$$
 
@@ -171,7 +171,7 @@ a quick fix to the gradient exploding. While it does not entirely solve the prob
 Below we define a function to clip the gradients of a model that is either a `RNNModelScratch` instance or a Gluon model. Also note that we compute the gradient norm over all parameters.
 
 ```{.python .input  n=10}
-# Saved in the d2l package for later use
+#@save
 def grad_clipping(model, theta):
     if isinstance(model, gluon.Block):
         params = [p.data() for p in model.collect_params().values()]
@@ -185,7 +185,7 @@ def grad_clipping(model, theta):
 
 ## Training
 
-Let's first define the function to train the model on one data epoch. It differs from the models training of :numref:`sec_softmax_scratch` in three places:
+Let us first define the function to train the model on one data epoch. It differs from the models training of :numref:`sec_softmax_scratch` in three places:
 
 1. Different sampling methods for sequential data (independent sampling and
    sequential partitioning) will result in differences in the initialization of
@@ -197,7 +197,7 @@ Let's first define the function to train the model on one data epoch. It differs
 When the consecutive sampling is used, we initialize the hidden state at the beginning of each epoch. Since the $i^\mathrm{th}$ example in the next minibatch is adjacent to the current $i^\mathrm{th}$ example, so the next minibatch can use the current hidden state directly, we only detach the gradient so that we compute the gradients within a minibatch. When using the random sampling, we need to re-initialize the hidden state for each iteration since each example is sampled with a random position. Same as the `train_epoch_ch3` function in :numref:`sec_softmax_scratch`, we use generalized `updater`, which could be either a Gluon trainer or a scratched implementation.
 
 ```{.python .input}
-# Saved in the d2l package for later use
+#@save
 def train_epoch_ch8(model, train_iter, loss, updater, ctx, use_random_iter):
     state, timer = None, d2l.Timer()
     metric = d2l.Accumulator(2)  # loss_sum, num_examples
@@ -224,7 +224,7 @@ def train_epoch_ch8(model, train_iter, loss, updater, ctx, use_random_iter):
 The training function again supports either we implement the model from scratch or using Gluon.
 
 ```{.python .input  n=11}
-# Saved in the d2l package for later use
+#@save
 def train_ch8(model, train_iter, vocab, lr, num_epochs, ctx,
               use_random_iter=False):
     # Initialize
@@ -264,7 +264,7 @@ num_epochs, lr = 500, 1
 train_ch8(model, train_iter, vocab, lr, num_epochs, ctx)
 ```
 
-Finally let's check the results to use a random sampling iterator.
+Finally let us check the results to use a random sampling iterator.
 
 ```{.python .input}
 train_ch8(model, train_iter, vocab, lr, num_epochs, ctx, use_random_iter=True)

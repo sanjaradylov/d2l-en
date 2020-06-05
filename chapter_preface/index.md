@@ -70,10 +70,8 @@ solutions all in one place presents formidable challenges.
 Our goal in this book is to present a unified resource
 to bring would-be practitioners up to speed.
 
-
-We started this book project in July 2017 when we needed
-to explain MXNet's (then new) Gluon interface to our users.
-At the time, there were no resources that simultaneously
+At the time we started this book project,
+there were no resources that simultaneously
 (i) were up to date; (ii) covered the full breadth
 of modern machine learning with substantial technical depth;
 and (iii) interleaved exposition of the quality one expects
@@ -103,13 +101,13 @@ Moreover, too many resources are hidden behind the paywalls
 of commercial course providers.
 
 We set out to create a resource that could
-(1) be freely available for everyone;
-(2) offer sufficient technical depth to provide a starting point on the path
+(i) be freely available for everyone;
+(ii) offer sufficient technical depth to provide a starting point on the path
 to actually becoming an applied machine learning scientist;
-(3) include runnable code, showing readers *how* to solve problems in practice;
-(4) that allowed for rapid updates, both by us
+(iii) include runnable code, showing readers *how* to solve problems in practice;
+(iv) allow for rapid updates, both by us
 and also by the community at large;
-and (5) be complemented by a [forum](http://discuss.mxnet.io)
+and (v) be complemented by a [forum](http://discuss.d2l.ai)
 for interactive discussion of technical details and to answer questions.
 
 These goals were often in conflict.
@@ -173,13 +171,10 @@ ammunition to solve problems quickly,
 at the expense of requiring the reader
 to trust us with some curatorial decisions.
 
-Throughout, we will be working with the MXNet library,
-which has the rare property of being flexible enough for research
-while being fast enough for production.
 This book will teach deep learning concepts from scratch.
 Sometimes, we want to delve into fine details about the models
 that would typically be hidden from the user
-by Gluon's advanced abstractions.
+by deep learning frameworks' advanced abstractions.
 This comes up especially in the basic tutorials,
 where we want you to understand everything
 that happens in a given layer or optimizer.
@@ -261,6 +256,8 @@ We are hopeful that as the theory of deep learning progresses,
 future editions of this book will be able to provide insights
 in places the present edition cannot.
 
+:begin_tab:`mxnet`
+
 Most of the code in this book is based on Apache MXNet.
 MXNet is an open-source framework for deep learning
 and the preferred choice of AWS (Amazon Web Services),
@@ -268,22 +265,47 @@ as well as many colleges and companies.
 All of the code in this book has passed tests under the newest MXNet version.
 However, due to the rapid development of deep learning, some code
 *in the print edition* may not work properly in future versions of MXNet.
-However, we plan to keep the online version remain up-to-date.
+However, we plan to keep the online version up-to-date.
 In case you encounter any such problems,
 please consult :ref:`chap_installation`
 to update your code and runtime environment.
 
 At times, to avoid unnecessary repetition, we encapsulate
 the frequently-imported and referred-to functions, classes, etc.
-in this book in the `d2l` package.
+in this book in the `d2l.mxnet` module.
 For any block such as a function, a class, or multiple imports
 to be saved in the package, we will mark it with
-`# Saved in the d2l package for later use`.
+`#@save`.
 The `d2l` package is light-weight and only requires
 the following packages and modules as dependencies:
 
+:end_tab:
+
+:begin_tab:`pytorch`
+
+Most of the code in this book is based on PyTorch.
+Pytorch is an open-source framework for deep learning, which is extremely
+popular in the research community.
+All of the code in this book has passed tests under the the newest PyTorch.
+However, due to the rapid development of deep learning, some code
+*in the print edition* may not work properly in future versions of PyTorch.
+However, we plan to keep the online version up-to-date.
+In case you encounter any such problems,
+please consult :ref:`chap_installation`
+to update your code and runtime environment.
+
+At times, to avoid unnecessary repetition, we encapsulate
+the frequently-imported and referred-to functions, classes, etc.
+in this book in the `d2l.torch` module.
+For any block such as a function, a class, or multiple imports
+to be saved in the package, we will mark it with `#@save`.
+The `d2l` package is light-weight and only requires
+the following packages and modules as dependencies:
+
+:end_tab:
+
 ```{.python .input  n=1}
-# Saved in the d2l package for later use
+#@save
 import collections
 from collections import defaultdict
 from IPython import display
@@ -300,6 +322,38 @@ import sys
 import tarfile
 import time
 import zipfile
+
+d2l = sys.modules[__name__]
+```
+
+```{.python .input  n=1}
+#@tab pytorch
+#@save
+import sys
+import collections
+from collections import defaultdict
+from matplotlib import pyplot as plt
+from IPython import display
+import math
+import torch
+import torchvision
+from torch import nn
+from torch.nn import functional as F
+from torch.utils import data
+from torchvision import transforms
+import numpy as np
+import os
+import pandas as pd
+import random
+import re
+import shutil
+import sys
+import tarfile
+import time
+import zipfile
+import requests
+
+d2l = sys.modules[__name__]
 ```
 
 We offer a detailed overview of these functions and classes in :numref:`sec_d2l`.
@@ -332,12 +386,9 @@ you may want to peruse this [Python tutorial](http://learnpython.org/).
 ### Forum
 
 Associated with this book, we have launched a discussion forum,
-located at [discuss.mxnet.io](https://discuss.mxnet.io/).
+located at [discuss.d2l.ai](https://discuss.d2l.ai/).
 When you have questions on any section of the book,
-you can find the associated discussion page by scanning the QR code
-at the end of the section to participate in its discussions.
-The authors of this book and broader MXNet developer community
-frequently participate in forum discussions.
+you can find the associated discussion page link at the end of each chapter. 
 
 
 ## Acknowledgments
@@ -364,8 +415,11 @@ Steve Sedlmeyer, ruslo, Rafael Schlatter, liusy182, Giannis Pappas, ruslo,
 ati-ozgur, qbaza, dchoi77, Adam Gerson, Phuc Le, Mark Atwood, christabella, vn09,
 Haibin Lin, jjangga0214, RichyChen, noelo, hansent, Giel Dops, dvincent1337, WhiteD3vil,
 Peter Kulits, codypenta, joseppinilla, ahmaurya, karolszk, heytitle, Peter Goetz, rigtorp,
-tiepvupsu, sfilip, mlxd, KaleabTessera, Sanjar Adilov, MatteoFerrara, hsneto,
-Katarzyna Biesialska, Gregory Bruss, duythanhvn, paulaurel.
+tiepvupsu, sfilip, mlxd, Kale-ab Tessera, Sanjar Adilov, MatteoFerrara, hsneto,
+Katarzyna Biesialska, Gregory Bruss, duythanhvn, paulaurel, graytowne, minhduc0711,
+sl7423, Jaedong Hwang, Yida Wang, cys4, clhm, JeanKaddour, austinmw, trebeljahr, tbaums,
+cuongvng, pavelkomarov, vzlamal, NotAnotherSystem, J-Arun-Mani, jancio, eldarkurtic,
+the-great-shazbot, doctorcolossus.
 
 We thank Amazon Web Services, especially Swami Sivasubramanian,
 Raju Gulabani, Charlie Bell, and Andrew Jassy for their generous support in writing this book. Without the available time, resources, discussions with colleagues, and continuous encouragement this book would not have happened.
@@ -376,22 +430,20 @@ Raju Gulabani, Charlie Bell, and Andrew Jassy for their generous support in writ
 * Deep learning has revolutionized pattern recognition, introducing technology that now powers a wide range of  technologies, including computer vision, natural language processing, automatic speech recognition.
 * To successfully apply deep learning, you must understand how to cast a problem, the mathematics of modeling, the algorithms for fitting your models to data, and the engineering techniques to implement it all.
 * This book presents a comprehensive resource, including prose, figures, mathematics, and code, all in one place.
-* To answer questions related to this book, visit our forum at https://discuss.mxnet.io/.
-* Apache MXNet is a powerful library for coding up deep learning models and running them in parallel across GPU cores.
-* Gluon is a high level library that makes it easy to code up deep learning models using Apache MXNet.
-* Conda is a Python package manager that ensures that all software dependencies are met.
+* To answer questions related to this book, visit our forum at https://discuss.d2l.ai/.
 * All notebooks are available for download on GitHub.
-* If you plan to run this code on GPUs, do not forget to install the necessary drivers and update your configuration.
 
 
 ## Exercises
 
-1. Register an account on the discussion forum of this book [discuss.mxnet.io](https://discuss.mxnet.io/).
+1. Register an account on the discussion forum of this book [discuss.d2l.ai](https://discuss.d2l.ai/).
 1. Install Python on your computer.
 1. Follow the links at the bottom of the section to the forum, where you will be able to seek out help and discuss the book and find answers to your questions by engaging the authors and broader community.
-1. Create an account on the forum and introduce yourself.
 
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/18)
+:end_tab:
 
-## [Discussions](https://discuss.mxnet.io/t/2311)
-
-![](../img/qr_preface.svg)
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/20)
+:end_tab:

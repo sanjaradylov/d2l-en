@@ -4,7 +4,8 @@
 Today's computers are highly parallel systems, consisting of multiple CPU cores (often multiple threads per core), multiple processing elements per GPU and often multiple GPUs per device. In short, we can process many different things at the same time, often on different devices. Unfortunately Python is not a great way of writing parallel and asynchronous code, at least not with some extra help. After all, Python is single-threaded and this is unlikely to change in the future. Deep learning frameworks such as MXNet and TensorFlow utilize an asynchronous programming model to improve performance (PyTorch uses Python's own scheduler leading to a different performance trade-off). Hence, understanding how asynchronous programming works helps us to develop more efficient programs, by proactively reducing computational requirements and mutual dependencies. This allows us to reduce memory overhead and increase processor utilization. We begin by importing the necessary libraries.
 
 ```{.python .input  n=1}
-import d2l, numpy, os, subprocess
+from d2l import mxnet as d2l
+import numpy, os, subprocess
 from mxnet import autograd, gluon, np, npx
 from mxnet.gluon import nn
 npx.set_np()
@@ -12,7 +13,7 @@ npx.set_np()
 
 ## Asynchrony via Backend
 
-For a warmup consider the following toy problem - we want to generate a random matrix and multiply it. Let's do that both in NumPy and in MXNet NP to see the difference.
+For a warmup consider the following toy problem - we want to generate a random matrix and multiply it. Let us do that both in NumPy and in MXNet NP to see the difference.
 
 ```{.python .input  n=2}
 with d2l.benchmark('numpy   : %.4f sec'):
@@ -23,7 +24,7 @@ with d2l.benchmark('numpy   : %.4f sec'):
 with d2l.benchmark('mxnet.np: %.4f sec'):
     for _ in range(10):
         a = np.random.normal(size=(1000, 1000))
-        b = np.dot(a, a)       
+        b = np.dot(a, a)
 ```
 
 This is orders of magnitude faster. At least it seems to be so. Since both are executed on the same processor something else must be going on. Forcing MXNet to finish all computation prior to returning shows what happened previously: computation is being executed by the backend while the frontend returns control to Python.
@@ -32,7 +33,7 @@ This is orders of magnitude faster. At least it seems to be so. Since both are e
 with d2l.benchmark():
     for _ in range(10):
         a = np.random.normal(size=(1000, 1000))
-        b = np.dot(a, a)       
+        b = np.dot(a, a)
     npx.waitall()
 ```
 
@@ -44,7 +45,7 @@ As shown in :numref:`fig_frontends`, users can write MXNet programs in various f
 :width:`300px`
 :label:`fig_frontends`
 
-Let's look at another toy example to understand the dependency graph a bit better.
+Let us look at another toy example to understand the dependency graph a bit better.
 
 ```{.python .input  n=4}
 x = np.ones((1, 2))
@@ -67,13 +68,13 @@ Whenever the Python frontend thread executes one of the first three statements, 
 
 There are a number of operations that will force Python to wait for completion:
 * Most obviously `npx.waitall()` waits until all computation has completed, regardless of when the compute instructions were issued. In practice it is a bad idea to use this operator unless absolutely necessary since it can lead to poor performance.
-* If we just want to wait until a specific variable is available we can call `z.wait_to_read()`. In this case MXNet blocks return to Python until the variable `z` has been computed. Other computation may well continue afterwards. 
+* If we just want to wait until a specific variable is available we can call `z.wait_to_read()`. In this case MXNet blocks return to Python until the variable `z` has been computed. Other computation may well continue afterwards.
 
-Let's see how this works in practice:
+Let us see how this works in practice:
 
 ```{.python .input  n=5}
 with d2l.benchmark('waitall     : %.4f sec'):
-    b = np.dot(a, a)       
+    b = np.dot(a, a)
     npx.waitall()
 
 with d2l.benchmark('wait_to_read: %.4f sec'):
@@ -85,17 +86,17 @@ Both operations take approximately the same time to complete. Besides the obviou
 
 ```{.python .input  n=7}
 with d2l.benchmark('numpy  conversion: %.4f sec'):
-    b = np.dot(a, a)       
+    b = np.dot(a, a)
     b.asnumpy()
 
 with d2l.benchmark('scalar conversion: %.4f sec'):
-    b = np.dot(a, a)       
+    b = np.dot(a, a)
     b.sum().item()
 ```
 
 ## Improving Computation
 
-On a heavily multithreaded system (even regular laptops have 4 threads or more and on multi-socket servers this number can exceed 256) the overhead of scheduling operations can become significant. This is why it's highly desirable to have computation and scheduling occur asynchronously and in parallel. To illustrate the benefit of doing this let's see what happens if we increment a variable by 1 multiple times, both in sequence or asynchronously. We simulate synchronous execution by inserting a `wait_to_read()` barrier in between each addition.
+On a heavily multithreaded system (even regular laptops have 4 threads or more and on multi-socket servers this number can exceed 256) the overhead of scheduling operations can become significant. This is why it is highly desirable to have computation and scheduling occur asynchronously and in parallel. To illustrate the benefit of doing this let us see what happens if we increment a variable by 1 multiple times, both in sequence or asynchronously. We simulate synchronous execution by inserting a `wait_to_read()` barrier in between each addition.
 
 ```{.python .input  n=9}
 with d2l.benchmark('Synchronous : %.4f sec'):
@@ -121,7 +122,7 @@ Assume that the durations of these three stages are $t_1, t_2$ and $t_3$, respec
 
 Imagine a situation where we keep on inserting operations into the backend by executing Python code on the frontend. For instance, the frontend might insert a large number of minibatch tasks within a very short time. After all, if no meaningful computation happens in Python this can be done quite quickly. If each of these tasks can be launched quickly at the same time this may cause a spike in memory usage. Given a finite amount of memory available on GPUs (and even on CPUs) this can lead to resource contention or even program crashes. Some readers might have noticed that previous training routines made use of synchronization methods such as `item` or even `asnumpy`.
 
-We recommend to use these operations carefully, e.g., for each minibatch, such as to balance computational efficiency and memory footprint. To illustrate what happens let's implement a simple training loop for a deep network and measure its memory consumption and timing. Below is the mock data generator and deep network.
+We recommend to use these operations carefully, e.g., for each minibatch, such as to balance computational efficiency and memory footprint. To illustrate what happens let us implement a simple training loop for a deep network and measure its memory consumption and timing. Below is the mock data generator and deep network.
 
 ```{.python .input  n=10}
 def data_iter():
@@ -158,7 +159,7 @@ for X, y in data_iter():
 loss(y, net(X)).wait_to_read()
 ```
 
-To ensure that we don't overflow the task buffer on the backend we insert a `wait_to_read` call for the loss function at the end of each loop. This forces the forward pass to complete before a new forward pass is commenced. Note that a (possibly more elegant) alternative would have been to track the loss in a scalar variable and to force a barrier via the `item` call.
+To ensure that we do not overflow the task buffer on the backend we insert a `wait_to_read` call for the loss function at the end of each loop. This forces the forward pass to complete before a new forward pass is commenced. Note that a (possibly more elegant) alternative would have been to track the loss in a scalar variable and to force a barrier via the `item` call.
 
 ```{.python .input  n=14}
 mem = get_mem()
@@ -173,7 +174,7 @@ with d2l.benchmark('Time per epoch: %.4f sec'):
 print('increased memory: %f MB' % (get_mem() - mem))
 ```
 
-As we see, the timing of the minibatches lines up quite nicely with the overall runtime of the optimization code. Moreover, memory footprint only increases slightly. Now let's see what happens if we drop the barrier at the end of each minibatch.
+As we see, the timing of the minibatches lines up quite nicely with the overall runtime of the optimization code. Moreover, memory footprint only increases slightly. Now let us see what happens if we drop the barrier at the end of each minibatch.
 
 ```{.python .input  n=14}
 mem = get_mem()

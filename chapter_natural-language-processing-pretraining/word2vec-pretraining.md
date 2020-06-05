@@ -7,13 +7,14 @@ In this section, we will train a skip-gram model defined in
 First, import the packages and modules required for the experiment, and load the PTB dataset.
 
 ```{.python .input  n=1}
-import d2l
+from d2l import mxnet as d2l
 from mxnet import autograd, gluon, np, npx
 from mxnet.gluon import nn
 npx.set_np()
 
 batch_size, max_window_size, num_noise_words = 512, 5, 5
-data_iter, vocab = d2l.load_data_ptb(512, 5, 5)
+data_iter, vocab = d2l.load_data_ptb(batch_size, max_window_size,
+                                     num_noise_words)
 ```
 
 ## The Skip-Gram Model

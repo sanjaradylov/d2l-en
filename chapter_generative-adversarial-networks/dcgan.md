@@ -8,7 +8,7 @@ In this section, we will demonstrate how you can use GANs to generate photoreali
 ```{.python .input  n=1}
 from mxnet import gluon, init, np, npx
 from mxnet.gluon import nn
-import d2l
+from d2l import mxnet as d2l
 
 npx.set_np()
 ```
@@ -18,7 +18,7 @@ npx.set_np()
 The dataset we will use is a collection of Pokemon sprites obtained from [pokemondb](https://pokemondb.net/sprites). First download, extract and load this dataset.
 
 ```{.python .input  n=2}
-# Saved in the d2l package for later use
+#@save
 d2l.DATA_HUB['pokemon'] = (d2l.DATA_URL + 'pokemon.zip',
                            'c065c0e2593b8b161a2d7873e42418bf6a21106c')
 
@@ -40,7 +40,7 @@ data_iter = gluon.data.DataLoader(
     shuffle=True, num_workers=d2l.get_dataloader_workers())
 ```
 
-Let's visualize the first 20 images.
+Let us visualize the first 20 images.
 
 ```{.python .input  n=4}
 d2l.set_figsize((4, 4))
@@ -229,7 +229,7 @@ def train(net_D, net_G, data_iter, num_epochs, lr, latent_dim,
         loss_D, loss_G, metric[2]/timer.stop(), ctx))
 ```
 
-Now let's train the model.
+Now let us train the model.
 
 ```{.python .input  n=21}
 latent_dim, lr, num_epochs = 100, 0.005, 40

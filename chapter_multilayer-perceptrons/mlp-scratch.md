@@ -3,12 +3,19 @@
 
 Now that we have characterized 
 multilayer perceptrons (MLPs) mathematically, 
-let's try to implement one ourselves.
+let us try to implement one ourselves.
 
-```{.python .input  n=1}
-import d2l
+```{.python .input}
+from d2l import mxnet as d2l
 from mxnet import gluon, np, npx
 npx.set_np()
+```
+
+```{.python .input}
+#@tab pytorch
+from d2l import torch as d2l
+import torch
+from torch import nn
 ```
 
 To compare against our previous results
@@ -18,7 +25,13 @@ we will continue work with
 the Fashion-MNIST image classification dataset 
 (:numref:`sec_fashion_mnist`).
 
-```{.python .input  n=2}
+```{.python .input}
+batch_size = 256
+train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
+```
+
+```{.python .input}
+#@tab pytorch
 batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
 ```
@@ -37,17 +50,17 @@ with one hidden layer and $256$ hidden units.
 Note that we can regard both of these quantities
 as *hyperparameters* and ought in general
 to set them based on performance on validation data.
-Typically, we choose layer widths in powers of $2$
-which tends to be computationally efficient because
+Typically, we choose layer widths in powers of $2$,
+which tend to be computationally efficient because
 of how memory is alotted and addressed in hardware.
 
 Again, we will represent our parameters with several `ndarray`s.
 Note that *for every layer*, we must keep track of
 one weight matrix and one bias vector.
-As always, we call `attach_grad` to allocate memory
+As always, we allocate memory
 for the gradients (of the loss) with respect to these parameters.
 
-```{.python .input  n=3}
+```{.python .input}
 num_inputs, num_outputs, num_hiddens = 784, 10, 256
 
 W1 = np.random.normal(scale=0.01, size=(num_inputs, num_hiddens))
@@ -60,16 +73,35 @@ for param in params:
     param.attach_grad()
 ```
 
+```{.python .input}
+#@tab pytorch
+num_inputs, num_outputs, num_hiddens = 784, 10, 256
+
+W1 = nn.Parameter(torch.randn(num_inputs, num_hiddens, requires_grad=True)*0.01)
+b1 = nn.Parameter(torch.zeros(num_hiddens, requires_grad=True))
+W2 = nn.Parameter(torch.randn(num_hiddens, num_outputs, requires_grad=True)*0.01)
+b2 = nn.Parameter(torch.zeros(num_outputs, requires_grad=True))
+
+params = [W1, b1, W2, b2]
+```
+
 ## Activation Function
 
 To make sure we know how everything works,
 we will implement the ReLU activation ourselves
-using the `maximum` function rather than 
-invoking `npx.relu` directly.
+using the maximum function rather than 
+invoking `relu` directly.
 
-```{.python .input  n=4}
+```{.python .input}
 def relu(X):
     return np.maximum(X, 0)
+```
+
+```{.python .input}
+#@tab pytorch
+def relu(X):
+    a=torch.zeros_like(X)
+    return torch.max(X, a)
 ```
 
 ## The model
@@ -80,29 +112,42 @@ a flat vector of length  `num_inputs`.
 Finally, we implement our model 
 with just a few lines of code.
 
-```{.python .input  n=5}
+```{.python .input}
 def net(X):
     X = X.reshape(-1, num_inputs)
     H = relu(np.dot(X, W1) + b1)
     return np.dot(H, W2) + b2
 ```
 
+```{.python .input}
+#@tab pytorch
+def net(X):
+    X = X.reshape((-1, num_inputs))
+    H = relu(X@W1 + b1)   # Here '@' stands for dot product operation
+    return (H@W2 + b2)
+```
+
 ## The Loss Function
 
-To ensure numerical stability
-(and because we already implemented
+To ensure numerical stability,
+and because we already implemented
 the softmax function from scratch
 (:numref:`sec_softmax_scratch`),
 we leverage Gluon's integrated function
 for calculating the softmax and cross-entropy loss.
-Recall our easlier discussion of these intricacies 
+Recall our earlier discussion of these intricacies 
 (:numref:`sec_mlp`).
 We encourage the interested reader 
-to examine the source code for `mxnet.gluon.loss.SoftmaxCrossEntropyLoss`
+to examine the source code for loss function
 to deepen their knowledge of implementation details.
 
-```{.python .input  n=6}
+```{.python .input}
 loss = gluon.loss.SoftmaxCrossEntropyLoss()
+```
+
+```{.python .input}
+#@tab pytorch
+loss = nn.CrossEntropyLoss()
 ```
 
 ## Training
@@ -115,21 +160,33 @@ we call the `train_ch3` function
 setting the number of epochs to $10$ 
 and the learning rate to $0.5$.
 
-```{.python .input  n=7}
+```{.python .input}
 num_epochs, lr = 10, 0.5
 d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs,
               lambda batch_size: d2l.sgd(params, lr, batch_size))
 ```
 
+```{.python .input}
+#@tab pytorch
+num_epochs, lr = 10, 0.5
+updater = torch.optim.SGD(params, lr=lr)
+d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, updater)
+```
+
 To evaluate the learned model, 
 we apply it on some test data.
 
-```{.python .input  n=8}
+```{.python .input}
+d2l.predict_ch3(net, test_iter)
+```
+
+```{.python .input}
+#@tab pytorch
 d2l.predict_ch3(net, test_iter)
 ```
 
 This looks a bit better than our previous result,
-using simple linear models and gives us 
+which used simple linear models, and it gives us 
 some signal that we are on the right path.
 
 ## Summary
@@ -149,6 +206,11 @@ this can still get messy
 1. Describe why it is much more challenging to deal with multiple hyperparameters. 
 1. What is the smartest strategy you can think of for structuring a search over multiple hyperparameters?
 
-## [Discussions](https://discuss.mxnet.io/t/2339)
 
-![](../img/qr_mlp-scratch.svg)
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/92)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/93)
+:end_tab:

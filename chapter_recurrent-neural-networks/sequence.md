@@ -13,7 +13,7 @@ In short, ratings are anything but stationary. Using temporal dynamics helped :c
 movies more accurately. But it is not just about movies.
 
 * Many users have highly particular behavior when it comes to the time when they open apps. For instance, social media apps are much more popular after school with students. Stock market trading apps are more commonly used when the markets are open.
-* It is much harder to predict tomorrow's stock prices than to fill in the blanks for a stock price we missed yesterday, even though both are just a matter of estimating one number. After all, hindsight is so much easier than foresight. In statistics the former is called *extrapolation* whereas the latter is called *interpolation*.
+* It is much harder to predict tomorrow's stock prices than to fill in the blanks for a stock price we missed yesterday, even though both are just a matter of estimating one number. After all, foresight is so much harder than hindsight. In statistics, the former (predicting beyond the known observations) is called *extrapolation* whereas the latter (estimating between the existing observations) is called *interpolation*.
 * Music, speech, text, movies, steps, etc. are all sequential in nature. If we were to permute them they would make little sense. The headline *dog bites man* is much less surprising than *man bites dog*, even though the words are identical.
 * Earthquakes are strongly correlated, i.e., after a massive earthquake there are very likely several smaller aftershocks, much more so than without the strong quake. In fact, earthquakes are spatiotemporally correlated, i.e., the aftershocks typically occur within a short time span and in close proximity.
 * Humans interact with each other in a sequential nature, as can be seen in Twitter fights, dance patterns and debates.
@@ -26,7 +26,7 @@ In short, we need statistical tools and new deep neural networks architectures t
 :width:`400px`
 :label:`fig_ftse100`
 
-Let's denote the prices by $x_t \geq 0$, i.e., at time $t \in \mathbb{N}$ we observe some price $x_t$. For a trader to do well in the stock market on day $t$ he should want to predict $x_t$ via
+Let us denote the prices by $x_t \geq 0$, i.e., at time $t \in \mathbb{N}$ we observe price $x_t$. For a trader to do well in the stock market on day $t$ he should want to predict $x_t$ via
 
 $$x_t \sim p(x_t \mid x_{t-1}, \ldots, x_1).$$
 
@@ -35,7 +35,7 @@ $$x_t \sim p(x_t \mid x_{t-1}, \ldots, x_1).$$
 In order to achieve this, our trader could use a regressor such as the one we trained in :numref:`sec_linear_gluon`. There is just a major problem: the number of inputs, $x_{t-1}, \ldots, x_1$ varies, depending on $t$. That is, the number increases with the amount of data that we encounter, and we will need an approximation to make this computationally tractable. Much of what follows in this chapter will revolve around how to estimate $p(x_t \mid x_{t-1}, \ldots, x_1)$ efficiently. In a nutshell it boils down to two strategies:
 
 1. Assume that the potentially rather long sequence $x_{t-1}, \ldots, x_1$ is not really necessary. In this case we might content ourselves with some timespan $\tau$ and only use $x_{t-1}, \ldots, x_{t-\tau}$ observations. The immediate benefit is that now the number of arguments is always the same, at least for $t > \tau$. This allows us to train a deep network as indicated above. Such models will be called *autoregressive* models, as they quite literally perform regression on themselves.
-1. Another strategy, shown in :numref:`fig_sequence-model`, is to try and keep some summary $h_t$ of the past observations, at the same time update $h_t$ in addition to the prediction $\hat{x_t}$. This leads to models that estimate $x_t$ with $\hat{x_t} = p(x_t \mid x_{t-1}, h_{t})$ and moreover updates of the form  $h_t = g(h_{t-1}, x_{t-1})$. Since $h_t$ is never observed, these models are also called *latent autoregressive models*. LSTMs and GRUs are examples of this.
+1. Another strategy, shown in :numref:`fig_sequence-model`, is to try and keep some summary $h_t$ of the past observations, at the same time update $h_t$ in addition to the prediction $\hat{x}_t$. This leads to models that estimate $x_t$ with $\hat{x}_t = p(x_t \mid x_{t-1}, h_{t})$ and moreover updates of the form  $h_t = g(h_{t-1}, x_{t-1})$. Since $h_t$ is never observed, these models are also called *latent autoregressive models*. LSTMs and GRUs are examples of this.
 
 ![A latent autoregressive model. ](../img/sequence-model.svg)
 :label:`fig_sequence-model`
@@ -69,11 +69,11 @@ In fact, if we have a Markov model, we can obtain a reverse conditional probabil
 
 ## A Toy Example
 
-After so much theory, let's try this out in practice. Let's begin by generating some data. To keep things simple we generate our time series by using a sine function with some additive noise.
+After so much theory, let us try this out in practice. Let us begin by generating some data. To keep things simple we generate our time series by using a sine function with some additive noise.
 
 ```{.python .input}
 %matplotlib inline
-import d2l
+from d2l import mxnet as d2l
 from mxnet import autograd, np, npx, gluon, init
 from mxnet.gluon import nn
 npx.set_np()
@@ -81,6 +81,19 @@ npx.set_np()
 T = 1000  # Generate a total of 1000 points
 time = np.arange(0, T)
 x = np.sin(0.01 * time) + 0.2 * np.random.normal(size=T)
+d2l.plot(time, [x])
+```
+
+```{.python .input}
+#@tab pytorch
+%matplotlib inline
+from d2l import torch as d2l
+import torch
+import torch.nn as nn
+
+T = 1000        # Generate a total of 1000 points
+time = torch.arange(0.0, T)
+x = torch.sin(0.01 * time) + 0.2*torch.randn(T)
 d2l.plot(time, [x])
 ```
 
@@ -111,6 +124,37 @@ def get_net():
 loss = gluon.loss.L2Loss()
 ```
 
+```{.python .input}
+#@tab pytorch
+tau = 4
+features = torch.zeros((T-tau, tau))
+for i in range(tau):
+    features[:, i] = x[i: T-tau+i]
+labels = x[tau:]
+
+batch_size, n_train = 16, 600
+train_iter = d2l.load_array((features[:n_train], labels[:n_train]),
+                            batch_size, is_train=True)
+test_iter = d2l.load_array((features[:n_train], labels[:n_train]),
+                           batch_size, is_train=False)
+
+# Function for initializing the weights of net
+def init_weights(m):
+    if type(m) == nn.Linear:
+        torch.nn.init.xavier_uniform_(m.weight)
+
+# Vanilla MLP architecture
+def get_net():
+    net = nn.Sequential(nn.Linear(4, 10),
+                        nn.ReLU(),
+                        nn.Linear(10, 1))
+    net.apply(init_weights)
+    return net
+
+# Least mean squares loss
+loss = nn.MSELoss()
+```
+
 Now we are ready to train.
 
 ```{.python .input}
@@ -130,13 +174,37 @@ net = get_net()
 train_net(net, train_iter, loss, 10, 0.01)
 ```
 
+```{.python .input}
+#@tab pytorch
+def train_net(net, train_iter, loss, epochs, lr):
+    trainer = torch.optim.Adam(net.parameters(), lr)
+    for epoch in range(1, epochs + 1):
+        for X, y in train_iter:
+            trainer.zero_grad()
+            l = loss(net(X), y.reshape(-1, 1))
+            l.backward()
+            trainer.step()
+        print('epoch %d, loss: %f' % (
+            epoch, d2l.evaluate_loss(net, train_iter, loss)))
+
+net = get_net()
+train_net(net, train_iter, loss, 10, 0.01)
+```
+
 ## Predictions
 
-Since both training and test loss are small, we would expect our model to work well. Let's see what this means in practice. The first thing to check is how well the model is able to predict what happens in the next timestep.
+Since both training and test loss are small, we would expect our model to work well. Let us see what this means in practice. The first thing to check is how well the model is able to predict what happens in the next timestep.
 
 ```{.python .input}
 estimates = net(features)
 d2l.plot([time, time[tau:]], [x, estimates],
+         legend=['data', 'estimate'])
+```
+
+```{.python .input}
+#@tab pytorch
+estimates = net(features)
+d2l.plot([time, time[tau:]], [x, estimates.detach()],
          legend=['data', 'estimate'])
 ```
 
@@ -148,7 +216,7 @@ x_{602} & = f(x_{601}, \ldots, x_{598}), \\
 x_{603} & = f(x_{602}, \ldots, x_{599}).
 \end{aligned}$$
 
-In other words, we will have to use our own predictions to make future predictions. Let's see how well this goes.
+In other words, we will have to use our own predictions to make future predictions. Let us see how well this goes.
 
 ```{.python .input}
 predictions = np.zeros(T)
@@ -161,9 +229,21 @@ d2l.plot([time, time[tau:], time[n_train:]],
          legend=['data', 'estimate', 'multistep'], figsize=(4.5, 2.5))
 ```
 
-As the above example shows, this is a spectacular failure. The estimates decay to a constant pretty quickly after a few prediction steps. Why did the algorithm work so poorly? This is ultimately due to the fact that the errors build up. Let's say that after step 1 we have some error $\epsilon_1 = \bar\epsilon$. Now the *input* for step 2 is perturbed by $\epsilon_1$, hence we suffer some error in the order of $\epsilon_2 = \bar\epsilon + L \epsilon_1$, and so on. The error can diverge rather rapidly from the true observations. This is a common phenomenon. For instance, weather forecasts for the next 24 hours tend to be pretty accurate but beyond that the accuracy declines rapidly. We will discuss methods for improving this throughout this chapter and beyond.
+```{.python .input}
+#@tab pytorch
+predictions = torch.zeros(T)
+predictions[:n_train] = x[:n_train]
+for i in range(n_train, T):
+    predictions[i] = net(
+        predictions[(i-tau):i].reshape(1, -1)).reshape(1)
+d2l.plot([time, time[tau:], time[n_train:]],
+         [x, estimates.detach(), predictions[n_train:].detach()],
+         legend=['data', 'estimate', 'multistep'], figsize=(4.5, 2.5))
+```
 
-Let's verify this observation by computing the $k$-step predictions on the entire sequence.
+As the above example shows, this is a spectacular failure. The estimates decay to a constant pretty quickly after a few prediction steps. Why did the algorithm work so poorly? This is ultimately due to the fact that the errors build up. Let us say that after step 1 we have some error $\epsilon_1 = \bar\epsilon$. Now the *input* for step 2 is perturbed by $\epsilon_1$, hence we suffer some error in the order of $\epsilon_2 = \bar\epsilon + L \epsilon_1$, and so on. The error can diverge rather rapidly from the true observations. This is a common phenomenon. For instance, weather forecasts for the next 24 hours tend to be pretty accurate but beyond that the accuracy declines rapidly. We will discuss methods for improving this throughout this chapter and beyond.
+
+Let us verify this observation by computing the $k$-step predictions on the entire sequence.
 
 ```{.python .input}
 k = 33  # Look up to k - tau steps ahead
@@ -177,6 +257,22 @@ for i in range(tau, k):  # Predict the (i-tau)-th step
 
 steps = (4, 8, 16, 32)
 d2l.plot([time[i:T-k+i] for i in steps], [features[i] for i in steps],
+         legend=['step %d' % i for i in steps], figsize=(4.5, 2.5))
+```
+
+```{.python .input}
+#@tab pytorch
+k = 33  # Look up to k - tau steps ahead
+
+features = torch.zeros((k, T-k))
+for i in range(tau):  # Copy the first tau features from x
+    features[i] = x[i:T-k+i]
+
+for i in range(tau, k):  # Predict the (i-tau)-th step
+    features[i] = net(features[(i-tau):i].T).T
+
+steps = (4, 8, 16, 32)
+d2l.plot([time[i:T-k+i] for i in steps], [features[i].detach() for i in steps],
          legend=['step %d' % i for i in steps], figsize=(4.5, 2.5))
 ```
 
@@ -202,6 +298,10 @@ This clearly illustrates how the quality of the estimates changes as we try to p
 1. Does causality also apply to text? To which extent?
 1. Give an example for when a latent autoregressive model might be needed to capture the dynamic of the data.
 
-## [Discussions](https://discuss.mxnet.io/t/2860)
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/113)
+:end_tab:
 
-![](../img/qr_sequence.svg)
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/114)
+:end_tab:

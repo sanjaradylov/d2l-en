@@ -1,66 +1,153 @@
 # Custom Layers
 
-One of the reasons for the success of deep learning can be found in the wide range of layers that can be used in a deep network. This allows for a tremendous degree of customization and adaptation. For instance, scientists have invented layers for images, text, pooling, loops, dynamic programming, even for computer programs. Sooner or later you will encounter a layer that does not exist yet in Gluon, or even better, you will eventually invent a new layer that works well for your problem at hand. This is when it is time to build a custom layer. This section shows you how.
+One factor behind deep learning's success
+is the availability of a wide range of layers
+that can be composed in creative ways
+to design architectures suitable
+for a wide variety of tasks.
+For instance, researchers have invented layers
+specifically for handling images, text,
+looping over sequential data,
+performing dynamic programming, etc.
+Sooner or later you will encounter (or invent)
+a layer that does not exist yet in the framework,
+In these cases, you must build a custom layer.
+In this section, we show you how.
 
 ## Layers without Parameters
 
-Since this is slightly intricate, we start with a custom layer (also known as Block) that
-does not have any inherent parameters. Our first step is very similar to when we
-introduced blocks in :numref:`sec_model_construction`. The following
-`CenteredLayer` class constructs a layer that subtracts the mean from the
-input. We build it by inheriting from the Block class and implementing the
-`forward` method.
+To start, we construct a custom layer (a block) 
+that does not have any parameters of its own. 
+This should look familiar if you recall our 
+introduction to block in :numref:`sec_model_construction`. 
+The following `CenteredLayer` class simply
+subtracts the mean from its input. 
+To build it, we simply need to inherit 
+from the Block class and implement the `forward` method.
 
-```{.python .input  n=1}
+```{.python .input}
 from mxnet import gluon, np, npx
 from mxnet.gluon import nn
 npx.set_np()
 
 class CenteredLayer(nn.Block):
     def __init__(self, **kwargs):
-        super(CenteredLayer, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def forward(self, x):
         return x - x.mean()
 ```
 
-To see how it works let's feed some data into the layer.
 
-```{.python .input  n=2}
+```{.python .input}
+#@tab pytorch
+import torch
+from torch import nn
+
+class CenteredLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self, x):
+        return x - x.mean()
+```
+
+Let us verify that our layer works as intended by feeding some data through it.
+
+```{.python .input}
 layer = CenteredLayer()
 layer(np.array([1, 2, 3, 4, 5]))
 ```
 
-We can also use it to construct more complex models.
 
-```{.python .input  n=3}
+```{.python .input}
+#@tab pytorch
+layer = CenteredLayer()
+layer(torch.FloatTensor([1, 2, 3, 4, 5]))
+```
+
+We can now incorporate our layer as a component
+in constructing more complex models.
+
+```{.python .input}
 net = nn.Sequential()
 net.add(nn.Dense(128), CenteredLayer())
 net.initialize()
 ```
 
-Let's see whether the centering layer did its job. For that we send random data through the network and check whether the mean vanishes. Note that since we are dealing with floating point numbers, we are going to see a very small albeit typically nonzero number.
 
-```{.python .input  n=4}
+```{.python .input}
+#@tab pytorch
+net = nn.Sequential(nn.Linear(8, 128), CenteredLayer())
+```
+
+As an extra sanity check, we can send random data 
+through the network and check that the mean is in fact 0.
+Because we are dealing with floating point numbers, 
+we may still see a *very* small nonzero number
+due to quantization.
+
+```{.python .input}
 y = net(np.random.uniform(size=(4, 8)))
+y.mean()
+```
+
+
+```{.python .input}
+#@tab pytorch
+y = net(torch.rand(4, 8))
 y.mean()
 ```
 
 ## Layers with Parameters
 
-Now that we know how to define layers in principle, let's define layers with parameters. These can be adjusted through training. In order to simplify things for an avid deep learning researcher the `Parameter` class and the `ParameterDict` dictionary provide some basic housekeeping functionality. In particular, they govern access, initialization, sharing, saving and loading model parameters. For instance, this way we do not need to write custom serialization routines for each new custom layer.
+Now that we know how to define simple layers,
+let us move on to defining layers with parameters
+that can be adjusted through training. 
+To automate some of the routine work
+the `Parameter` class 
+provide some basic housekeeping functionality.
+In particular, they govern access, initialization, 
+sharing, saving, and loading model parameters. 
+This way, among other benefits, we will not need to write
+custom serialization routines for every custom layer.
 
-For instance, we can use the member variable `params` of the `ParameterDict` type that comes with the Block class. It is a dictionary that maps string type parameter names to model parameters in the `Parameter` type.  We can create a `Parameter` instance from `ParameterDict` via the `get` function.
+:begin_tab:`mxnet`
+The `Block` class contains a `params` variable
+of the `ParameterDict` type. 
+This dictionary maps strings representing parameter names
+to model parameters (of the `Parameter` type). 
+The `ParameterDict` also supplies a `get` function
+that makes it easy to generate a new parameter
+with a specified name and shape.
+:end_tab:
 
-```{.python .input  n=7}
+
+```{.python .input}
 params = gluon.ParameterDict()
 params.get('param2', shape=(2, 3))
 params
 ```
 
-Let's use this to implement our own version of the dense layer. It has two parameters: bias and weight. To make it a bit nonstandard, we bake in the ReLU activation as default. Next, we implement a fully connected layer with both weight and bias parameters.  It uses ReLU as an activation function, where `in_units` and `units` are the number of inputs and the number of outputs, respectively.
 
-```{.python .input  n=19}
+:begin_tab:`mxnet`
+We now have all the basic ingredients that we need
+to implement our own version of Gluon's `Dense` layer. 
+Recall that this layer requires two parameters,
+one to represent the weight and another for the bias. 
+In this implementation, we bake in the ReLU activation as a default.
+In the `__init__` function, `in_units` and `units`
+denote the number of inputs and outputs, respectively.
+:end_tab:
+
+:begin_tab:`pytorch`
+Now let's implement your own version of PyTorch's `Linear` layer. 
+Recall that this layer requires two parameters,
+one to represent the weight and another for the bias. 
+In the `__init__` function, `in_units` and `units`
+denote the number of inputs and outputs, respectively.
+:end_tab:
+
+```{.python .input}
 class MyDense(nn.Block):
     # units: the number of outputs in this layer; in_units: the number of
     # inputs in this layer
@@ -74,23 +161,50 @@ class MyDense(nn.Block):
         return npx.relu(linear)
 ```
 
-Naming the parameters allows us to access them by name through dictionary lookup later. It is a good idea to give them instructive names. Next, we instantiate the `MyDense` class and access its model parameters.
+
+```{.python .input}
+#@tab pytorch
+class MyLinear(nn.Module):
+    def __init__(self, in_units, units):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(in_units, units))
+        self.bias = nn.Parameter(torch.randn(units,))
+    def forward(self, x):
+        return torch.matmul(x, self.weight.data) + self.bias.data
+```
+
+Next, we instantiate the `MyDense` class 
+and access its model parameters.
 
 ```{.python .input}
 dense = MyDense(units=3, in_units=5)
 dense.params
 ```
 
+
+```{.python .input}
+#@tab pytorch
+dense = MyLinear(5, 3)
+dense.weight
+```
+
 We can directly carry out forward calculations using custom layers.
 
-```{.python .input  n=20}
+```{.python .input}
 dense.initialize()
 dense(np.random.uniform(size=(2, 5)))
 ```
 
-We can also construct models using custom layers. Once we have that we can use it just like the built-in dense layer. The only exception is that in our case size inference is not automatic. Please consult the [MXNet documentation](http://www.mxnet.io) for details on how to do this.
 
-```{.python .input  n=19}
+```{.python .input}
+#@tab pytorch
+dense(torch.randn(2, 5))
+```
+
+We can also construct models using custom layers.
+Once we have that we can use it just like the built-in dense layer.
+
+```{.python .input}
 net = nn.Sequential()
 net.add(MyDense(8, in_units=64),
         MyDense(1, in_units=8))
@@ -98,18 +212,32 @@ net.initialize()
 net(np.random.uniform(size=(2, 64)))
 ```
 
+
+```{.python .input}
+#@tab pytorch
+net = nn.Sequential(MyLinear(64, 8), nn.ReLU(), MyLinear(8, 1))
+net(torch.randn(2, 64))
+```
+
 ## Summary
 
-* We can design custom layers via the Block class. This is more powerful than defining a block factory, since it can be invoked in many contexts.
-* Blocks can have local parameters.
+* We can design custom layers via the Block class. This allows us to define flexible new layers that behave differently from any existing layers in the library.
+* Once defined, custom layers can be invoked in arbitrary contexts and architectures.
+* Blocks can have local parameters, which are stored in a `ParameterDict` object in each Block's `params` attribute.
 
 
 ## Exercises
 
-1. Design a layer that learns an affine transform of the data, i.e., it removes the mean and learns an additive parameter instead.
-1. Design a layer that takes an input and computes a tensor reduction, i.e., it returns $y_k = \sum_{i, j} W_{ijk} x_i x_j$.
-1. Design a layer that returns the leading half of the Fourier coefficients of the data. Hint: look up the `fft` function in MXNet.
+1. Design a layer that learns an affine transform of the data.
+1. Design a layer that takes an input and computes a tensor reduction, 
+   i.e., it returns $y_k = \sum_{i, j} W_{ijk} x_i x_j$.
+1. Design a layer that returns the leading half of the Fourier coefficients of the data. 
 
-## [Discussions](https://discuss.mxnet.io/t/2328)
 
-![](../img/qr_custom-layer.svg)
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/58)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/59)
+:end_tab:
