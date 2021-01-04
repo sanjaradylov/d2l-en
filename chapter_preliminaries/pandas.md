@@ -1,14 +1,14 @@
 # Data Preprocessing
 :label:`sec_pandas`
 
-So far we have introduced a variety of techniques for manipulating data that are already stored in `ndarray`s.
+So far we have introduced a variety of techniques for manipulating data that are already stored in tensors.
 To apply deep learning to solving real-world problems,
-we often begin with preprocessing raw data, rather than those nicely prepared data in the `ndarray` format.
+we often begin with preprocessing raw data, rather than those nicely prepared data in the tensor format.
 Among popular data analytic tools in Python, the `pandas` package is commonly used.
 Like many other extension packages in the vast ecosystem of Python,
-`pandas` can work together with `ndarray`.
+`pandas` can work together with tensors.
 So, we will briefly walk through steps for preprocessing raw data with `pandas`
-and converting them into the `ndarray` format.
+and converting them into the tensor format.
 We will cover more data preprocessing techniques in later chapters.
 
 ## Reading the Dataset
@@ -16,32 +16,18 @@ We will cover more data preprocessing techniques in later chapters.
 As an example, we begin by creating an artificial dataset that is stored in a
 csv (comma-separated values) file `../data/house_tiny.csv`. Data stored in other
 formats may be processed in similar ways.
-The following `mkdir_if_not_exist`
-function ensures that the directory `../data` exists. The comment `#@save`
-is a special mark where the following function,
-class, or import statements are also saved in the `d2l` package so that later we can
-directly invoke the `mkdir_if_not_exist` function without redefining it.
-
-```{.python .input}
-#@tab all
-import os
-
-def mkdir_if_not_exist(path):  #@save
-    if not isinstance(path, str):
-        path = os.path.join(*path)
-    if not os.path.exists(path):
-        os.makedirs(path)
-```
 
 Below we write the dataset row by row into a csv file.
 
 ```{.python .input}
 #@tab all
-data_file = '../data/house_tiny.csv'
-mkdir_if_not_exist('../data')
+import os
+
+os.makedirs(os.path.join('..', 'data'), exist_ok=True)
+data_file = os.path.join('..', 'data', 'house_tiny.csv')
 with open(data_file, 'w') as f:
     f.write('NumRooms,Alley,Price\n')  # Column names
-    f.write('NA,Pave,127500\n')  # Each row is a data instance
+    f.write('NA,Pave,127500\n')  # Each row represents a data example
     f.write('2,NA,106000\n')
     f.write('4,NA,178100\n')
     f.write('NA,NA,140000\n')
@@ -91,10 +77,10 @@ inputs = pd.get_dummies(inputs, dummy_na=True)
 print(inputs)
 ```
 
-## Conversion to the  `ndarray` Format
+## Conversion to the Tensor Format
 
-Now that all the entries in `inputs` and `outputs` are numerical, they can be converted to the `ndarray` format.
-Once data are in this format, they can be further manipulated with those `ndarray` functionalities that we have introduced in :numref:`sec_ndarray`.
+Now that all the entries in `inputs` and `outputs` are numerical, they can be converted to the tensor format.
+Once data are in this format, they can be further manipulated with those tensor functionalities that we have introduced in :numref:`sec_ndarray`.
 
 ```{.python .input}
 from mxnet import np
@@ -111,9 +97,17 @@ X, y = torch.tensor(inputs.values), torch.tensor(outputs.values)
 X, y
 ```
 
+```{.python .input}
+#@tab tensorflow
+import tensorflow as tf
+
+X, y = tf.constant(inputs.values), tf.constant(outputs.values)
+X, y
+```
+
 ## Summary
 
-* Like many other extension packages in the vast ecosystem of Python, `pandas` can work together with `ndarray`.
+* Like many other extension packages in the vast ecosystem of Python, `pandas` can work together with tensors.
 * Imputation and deletion can be used to handle missing data.
 
 
@@ -122,8 +116,7 @@ X, y
 Create a raw dataset with more rows and columns.
 
 1. Delete the column with the most missing values.
-2. Convert the preprocessed dataset to the `ndarray` format.
-
+2. Convert the preprocessed dataset to the tensor format.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/28)
@@ -131,4 +124,8 @@ Create a raw dataset with more rows and columns.
 
 :begin_tab:`pytorch`
 [Discussions](https://discuss.d2l.ai/t/29)
+:end_tab:
+
+:begin_tab:`tensorflow`
+[Discussions](https://discuss.d2l.ai/t/195)
 :end_tab:
